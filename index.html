@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- skin:head — stamped from skin/2026.js by build/tools/gen_skin.py. Static on purpose: link-preview scrapers do not run JS. -->
+<title>ImplementAI 2026 · PGW National Conference</title>
+<meta name="description" content="29–30 October · Hobart">
+<meta property="og:title" content="ImplementAI 2026 · PGW National Conference">
+<meta property="og:description" content="29–30 October · Hobart">
+<meta property="og:image" content="https://pgwconference.com.au/img/og-1200x630.jpg">
+<meta property="og:url" content="https://pgwconference.com.au/">
+<meta name="twitter:card" content="summary_large_image">
+<!-- /skin:head -->
+<link rel="icon" type="image/svg+xml" href="img/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/landing.css">
+<script type="module" src="js/main.js"></script>
+</head>
+<body>
+<!--
+  PGW shell. Every section is present here; js/main.js removes the ones the current state does not show
+  (spec §2.4) and fills every word from skin/2026.js. Nothing year-specific is written in this file except
+  the stamped head block above. App links are CREATED by script only when appOpen is true: there is no
+  app link in this markup, hidden or otherwise (spec §9).
+-->
+<div class="wrap">
+  <header class="top" data-section="topbar">
+    <img class="logo" src="img/logo-base.svg" alt="PGW" width="186" height="26">
+    <div data-slot="topbar-app"></div>
+  </header>
+</div>
+
+<main>
+  <!-- ===== WRAPPED: the holding page's wrap block (spec §5.9) ===== -->
+  <section class="wrapblock wrap" data-section="wrap" aria-labelledby="wrap-h">
+    <p class="eyebrow" data-text="wrap.eyebrow"></p>
+    <h1 class="wrap-h" id="wrap-h" data-slot="wrap-headline"></h1>
+    <p class="wrap-p" data-text="wrap.thanks"></p>
+    <div data-slot="wrap-close"></div>
+    <div class="wrap-action" data-slot="wrap-app"></div>
+  </section>
+
+  <!-- ===== HERO (spec §3.2) ===== -->
+  <div class="hero-band" data-section="hero">
+    <!-- The glow is a real element inside a clipped band, never a pseudo-element bleeding past the page (carry-forward §1). -->
+    <div class="hero-glow" aria-hidden="true"></div>
+    <section class="hero wrap" aria-labelledby="hero-h">
+      <div class="motif" data-slot="motif"></div>
+      <p class="eyebrow" data-text="heroEyebrow"></p>
+      <h1 id="hero-h"><span data-text="title.lead"></span><span class="ai" data-text="title.mark"></span><br><span class="year" data-text="title.year"></span></h1>
+      <p class="when" data-slot="when"></p>
+      <p class="tagline" data-slot="tagline"></p>
+      <div class="hero-action" data-slot="hero-action"></div>
+    </section>
+  </div>
+
+  <!-- ===== STAGE: trailer + countdown, the page's one dark moment (spec §3.3) ===== -->
+  <div class="stage wrap rv" data-section="stage">
+    <div data-slot="trailer"></div>
+    <div class="countdown" data-slot="countdown"></div>
+  </div>
+
+  <!-- ===== INTRO: photo pair + the three locked paragraphs (spec §3.4, §5.5) ===== -->
+  <section class="s intro-s wrap rv" data-section="intro" aria-labelledby="intro-open">
+    <figure class="photos">
+      <img class="ph-main" src="img/group-1200.jpg"
+           srcset="img/group-800.jpg 800w, img/group-1200.jpg 1200w, img/group-2000.jpg 2000w"
+           sizes="(min-width: 1120px) 1040px, (min-width: 900px) calc(100vw - 80px), calc(100vw - 40px)"
+           width="2000" height="1125" decoding="async" data-alt="photo.alt">
+      <img class="ph-inset" src="img/lamps-640.jpg" alt="" width="640" height="1062" decoding="async">
+      <figcaption data-text="photo.caption"></figcaption>
+    </figure>
+    <div class="intro" data-slot="intro"></div>
+  </section>
+
+  <!-- ===== WHAT'S PLANNED: greige band, a real full-width element (spec §3.5) ===== -->
+  <div class="band band--greige" data-section="plan">
+    <section class="s wrap rv" aria-labelledby="plan-h">
+      <p class="eyebrow" data-text="labels.planEyebrow"></p>
+      <h2 class="h" id="plan-h" data-text="labels.planHeading"></h2>
+      <div data-slot="days"></div>
+      <p class="cpd" data-slot="cpd"></p>
+    </section>
+  </div>
+
+  <!-- ===== WHERE (spec §3.6) ===== -->
+  <section class="s wrap rv" data-section="where" aria-labelledby="where-eyebrow">
+    <p class="eyebrow" id="where-eyebrow" data-text="labels.whereEyebrow"></p>
+    <div class="venue" data-slot="venue"></div>
+  </section>
+
+  <!-- ===== WHAT TO WEAR (spec §3 item 7): rendered only while skin.whatToWear has cards (spec §6.3) ===== -->
+  <section class="s wrap rv" data-section="bring" aria-labelledby="bring-h">
+    <p class="eyebrow" data-text="labels.bringEyebrow"></p>
+    <h2 class="h" id="bring-h" data-text="labels.bringHeading"></h2>
+    <div class="wear" data-slot="bring"></div>
+  </section>
+
+  <!-- ===== EDUCATIONAL PARTNERS: charcoal band, a real full-width element (spec §3.8, §5.7) ===== -->
+  <div class="band band--dark" data-section="partners">
+    <section class="s wrap rv" aria-labelledby="part-h" data-slot="partners">
+      <p class="eyebrow" data-text="labels.partnersEyebrow"></p>
+      <h2 class="h" id="part-h" data-text="labels.partnersHeading"></h2>
+    </section>
+  </div>
+
+  <!-- ===== SPEAKERS (spec §3.9) ===== -->
+  <section class="s wrap rv" data-section="speakers" aria-labelledby="spk-h">
+    <p class="eyebrow" data-text="labels.speakersEyebrow"></p>
+    <h2 class="h" id="spk-h" data-text="labels.speakersHeading"></h2>
+    <ul class="people" data-slot="speakers"></ul>
+  </section>
+
+  <!-- ===== QUESTIONS? (spec §3.10, §5.8) ===== -->
+  <section class="s wrap rv" data-section="questions" aria-labelledby="q-eyebrow">
+    <p class="eyebrow" id="q-eyebrow" data-text="labels.questionsEyebrow"></p>
+    <div class="questions" data-slot="contacts"></div>
+  </section>
+</main>
+
+<!-- ===== FOOTER (spec §5.10) ===== -->
+<div class="wrap">
+  <footer class="foot" data-section="footer">
+    <div class="foot-row">
+      <div class="lic">
+        <img class="logo" src="img/logo-base.svg" alt="PGW" width="143" height="20">
+        <strong data-text="footer.name"></strong>
+        <span data-slot="licence-numbers"></span>
+      </div>
+      <nav class="policies" aria-label="PGW policies" data-slot="policies"></nav>
+    </div>
+    <p class="copy" data-text="footer.copyright"></p>
+  </footer>
+</div>
+</body>
+</html>
