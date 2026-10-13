@@ -65,6 +65,23 @@ export function tierPartners(partners, partnerTiers) {
   }))
 }
 
+/**
+ * Partner speakers (spec §6.1, revised 13 Oct): name, title, org, PHOTO and BIO. The photo is the app's own file,
+ * referenced from the app's origin as the partner logos are; '' when the app has none (the row shows initials).
+ * The bio is the app's text, verbatim; '' when the app has none (the row is plain, not a button).
+ * ⛔ No CSS zoom or crop here or anywhere: a photo that sits badly in its frame is re-cropped at source, in the app.
+ */
+export function mapSpeaker(s) {
+  return {
+    id: s.id,
+    name: s.name,
+    title: isStr(s.title) ? s.title : '',
+    org: s.org,
+    photo: isStr(s.photo) ? new URL(s.photo, APP_ORIGIN).href : '',
+    bio: isStr(s.bio) ? s.bio.trim() : '',
+  }
+}
+
 function checkPartners(p) {
   return Array.isArray(p) && p.length > 0 && p.every((x) => isStr(x.id) && isStr(x.name)) ? p : null
 }
@@ -72,7 +89,7 @@ function checkPartners(p) {
 /**
  * Load the app's data. Resolves to null if the module cannot be loaded at all; otherwise to an object
  * whose parts are each either valid or null:
- *   { conference, venue, tagline, sessions, partners (with tier + absolute logo), speakers, CONFERENCE_TZ }
+ *   { conference, venue, tagline, sessions, partners (with tier + absolute logo), speakers (with photo + bio), CONFERENCE_TZ }
  * @param {Record<string,string>} partnerTiers skin.partnerTiers
  * @param {string} [source] override for tests only; production uses the app's origin
  */
@@ -93,7 +110,7 @@ export async function loadData(partnerTiers, source = APP_DATA) {
     tagline: isStr(m.conference?.tagline) ? m.conference.tagline : null,
     sessions: checkSessions(m.sessions),
     partners: partnersRaw ? tierPartners(uniqueById(partnersRaw, 'partner'), partnerTiers) : null,
-    speakers: speakersRaw ? uniqueById(speakersRaw, 'speaker').map((s) => ({ id: s.id, name: s.name, title: isStr(s.title) ? s.title : '', org: s.org })) : null,
+    speakers: speakersRaw ? uniqueById(speakersRaw, 'speaker').map(mapSpeaker) : null,
     CONFERENCE_TZ: isStr(m.CONFERENCE_TZ) ? m.CONFERENCE_TZ : null,
   }
   for (const [k, v] of Object.entries(out)) if (v === null) console.error(`[data] the app's "${k}" is missing or changed shape; its section renders absent.`)

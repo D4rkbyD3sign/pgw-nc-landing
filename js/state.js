@@ -2,6 +2,7 @@
 //   the CLOCK (automatic, from the skin's two instants) and the FOUR HAND-SET FIELDS (from the skin).
 // Review override (spec §2.5, revised 6 Oct): URL params `state`, `appOpen`, `appOpensOn`, `materialsLinked`,
 // `highlightsVideo` each override one value, e.g. ?state=live&appOpen=false, ON A LOCAL PREVIEW HOST ONLY.
+// v10: `gate=false` too, which may only switch the gate OFF (manual T-3).
 // Overrides are read from the URL every load: never stored, never written anywhere, no visible control ships.
 
 export const CLOCKS = ['before', 'live', 'wrapped']
@@ -41,7 +42,7 @@ export function clockAt(skin, now) {
 /**
  * @param {object} [opts]
  * @param {string} [opts.hostname] the page's hostname; defaults to location.hostname (fail-closed)
- * @returns {{clock:'before'|'live'|'wrapped', clockOverridden:boolean, overridesAllowed:boolean, appOpen:boolean,
+ * @returns {{clock:'before'|'live'|'wrapped', clockOverridden:boolean, overridesAllowed:boolean, gate:boolean, appOpen:boolean,
  *            appOpensOn:string, materialsLinked:boolean, highlightsVideo:string}}
  */
 export function resolveState(skin, { now = Date.now(), search = '', hostname = currentHostname() } = {}) {
@@ -67,10 +68,17 @@ export function resolveState(skin, { now = Date.now(), search = '', hostname = c
     else console.warn(`[state] ignoring ?state=${v} (use before, live or wrapped)`)
   }
 
+  // The pre-launch gate (spec §2.6; v10 manual T-3). ⛔ Fails CLOSED: anything but exactly `false` in the skin keeps it up.
+  // On a LOCAL PREVIEW host only, ?gate=false switches it off so the page beneath can be reviewed without typing the
+  // password into a URL. It can never switch the gate ON from the URL, and no parameter ever supplies or changes the
+  // hash. On any other host this parameter is never read (q is empty there), so no URL opens the gate in production.
+  const gate = skin.gate !== false && !(q.get('gate') === 'false')
+
   const state = {
     clock,
     clockOverridden,
     overridesAllowed,
+    gate,
     appOpen: bool('appOpen', skin.appOpen === true),
     appOpensOn: String(text('appOpensOn', skin.appOpensOn) ?? '').trim(),
     materialsLinked: bool('materialsLinked', skin.materialsLinked === true),

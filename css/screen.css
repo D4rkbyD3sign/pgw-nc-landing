@@ -1,0 +1,86 @@
+/* The site's two companion screens: the 404 (spec §5.19, THE BROKEN CIRCUIT) and the gate (spec §5.20, THE CIRCUIT
+   THAT WAITS). Same family: charcoal ground, the white logo, one circuit board drawn edge to edge. */
+
+.screen-dark { min-height: 100vh; min-height: 100svh; background: var(--ink); color: var(--paper);
+  display: grid; grid-template-rows: auto 1fr auto; }
+.screen-dark a:focus-visible, .screen-dark button:focus-visible, .screen-dark input:focus-visible { outline-color: var(--lime); }
+/* A grid item with auto margins shrinks to its content and centres: the top bar and the footer must span the column. */
+.screen-dark > .wrap { width: 100%; }
+.screen-top { padding-top: 24px; padding-bottom: 24px; }
+.screen-logo { height: 26px; width: auto; display: block; }
+@media (min-width: 900px) { .screen-logo { height: 36px; } }
+.screen-main { align-self: center; padding: 24px 0 48px; }
+.screen-words { text-align: center; margin-top: 8px; padding: 0 20px; }
+.screen-dark .eyebrow { color: var(--on-dark-2); }
+.screen-h { margin-top: 12px; font-size: clamp(32px, 5vw, 48px); line-height: 1.1; letter-spacing: -.03em; font-weight: 600; text-wrap: balance; }
+.screen-line { margin: 16px auto 0; max-width: 32em; color: var(--on-dark-2); font-size: 16px; text-wrap: balance; }
+.screen-words .pill { margin-top: 32px; }
+.screen-foot { padding-top: 24px; padding-bottom: 32px; font-size: 12px; color: var(--on-dark-2); border-top: 1px solid rgba(250,249,246,.08); }
+
+/* ---------- the circuit: one drawing, cropped to its middle on narrow screens (slice), so the gap keeps its size ---------- */
+.circuit { display: block; width: 100%; height: 200px; }
+@media (min-width: 900px) { .circuit { height: 260px; } }
+.circuit .t { fill: none; stroke: var(--lime); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.circuit .dim { stroke-opacity: .22; }
+.circuit .live { stroke-opacity: .9; }
+.circuit .via { fill: var(--ink); stroke: var(--lime); stroke-width: 2; }
+.circuit .via.dim { stroke-opacity: .22; }
+.circuit .pad { fill: var(--lime); }
+.circuit .pad.dead { fill: var(--ink); stroke: var(--lime); stroke-width: 2; stroke-opacity: .3; }
+.circuit .code { font: 500 72px/1 var(--mono); fill: var(--paper); letter-spacing: -.02em; }
+/* The signal: a short bright dash runs the live trace to the pad, then the pad sparks and nothing gets across. */
+.circuit .pulse { fill: none; stroke: var(--paper); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 6 100; stroke-dashoffset: 106; opacity: 0; }
+.circuit .spark { fill: var(--lime); transform-box: fill-box; transform-origin: center; opacity: 0; }
+.circuit--404 .pulse { animation: run 3.2s var(--settle) infinite; }
+.circuit--404 .spark { animation: spark 3.2s ease-out infinite; }
+.circuit .spark:nth-of-type(2) { animation-delay: .06s; } .circuit .spark:nth-of-type(3) { animation-delay: .12s; }
+@keyframes run { 0% { stroke-dashoffset: 106; opacity: 1 } 55% { stroke-dashoffset: 6; opacity: 1 } 60%, 100% { stroke-dashoffset: 6; opacity: 0 } }
+@keyframes spark { 0%, 54% { opacity: 0; transform: scale(.4) } 58% { opacity: 1; transform: scale(1) } 75%, 100% { opacity: 0; transform: scale(1.6) } }
+
+/* ---------- the gate (spec §5.20) ---------- */
+/* Fixed over everything, so the page can mount beneath it while it fades (no paper flash between the two screens). */
+.gate { position: fixed; inset: 0; z-index: 50; overflow-y: auto; }
+/* Unpowered at rest: the left trace dim, both pads dead, the gap holding only the password block. */
+.gate-form { display: grid; }
+.gate-stage { position: relative; order: 1; }
+.gate-form .screen-h { order: 2; text-align: center; padding: 0 20px; margin-top: 24px; }
+.gate-msg { order: 3; min-height: 1.6em; margin-top: 12px; text-align: center; padding: 0 20px; color: var(--on-dark-2); font-size: 15px; }
+/* The password block sits IN THE GAP, its input centred on the trace's line. The gap between the pads is 244 board
+   units; the board scales by max(width/1200, height/260): 0.77 on phones (gap 188px), 1 or more from 900px (244px+). */
+/* translate Y = −(label 16 + gap 8 + half the input 22): the input's centre lands on the trace's line (y 130 of 260). */
+.gate-row { position: absolute; left: 50%; top: 50%; width: 176px; transform: translate(-50%, -46px);
+  display: grid; justify-items: center; gap: 8px; }
+@media (min-width: 900px) { .gate-row { width: 228px; } }
+.gate-label { justify-self: stretch; font: 500 11px/16px var(--mono); letter-spacing: .13em; text-transform: uppercase; color: var(--on-dark-2); }
+.gate-input { width: 100%; height: 44px; padding: 0 4px; background: transparent; color: var(--paper); border: 0; border-bottom: 1px solid rgba(250,249,246,.28);
+  border-radius: 0; font: 500 16px/1 var(--mono); letter-spacing: .04em; }
+/* Focus is the underline turning lime and thickening (lime on ink 9.35:1), not a box round a field that is all underline. */
+.gate-input:focus, .gate-input:focus-visible { outline: none; border-bottom: 2px solid var(--lime); }
+.gate-btn { margin-top: 4px; }
+/* Wrong password: the 404's pulse runs to the pad and sparks, once per attempt (js/gate.js re-adds the class). */
+.gate.is-wrong .pulse { animation: run 1.6s var(--settle) both; }
+.gate.is-wrong .spark { animation: spark 1.6s ease-out both; }
+/* Right password: the left trace powers up left to right and STAYS lit, a lime line bridges the gap, the far traces
+   light in sequence (600ms in all), then the screen fades and the load-in begins. */
+.circuit .power, .circuit .bridge { fill: none; stroke: var(--lime); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 100 100; stroke-dashoffset: 100; opacity: 0; }
+.gate.is-open .power { opacity: .9; animation: drawin .26s cubic-bezier(.5, 0, .2, 1) forwards; }
+.gate.is-open .near-pad { fill: var(--lime); stroke-opacity: 0; transition: fill .1s linear .26s, stroke-opacity .1s linear .26s; }
+.gate.is-open .bridge { opacity: .9; animation: drawin .12s linear .26s forwards; }
+.gate.is-open .far-pad { fill: var(--lime); stroke-opacity: 0; transition: fill .08s linear .38s, stroke-opacity .08s linear .38s; }
+.gate.is-open .far { stroke-opacity: .9; transition: stroke-opacity .08s linear .4s; }
+.gate.is-open .far2 { stroke-opacity: .9; transition: stroke-opacity .08s linear .46s; }
+.gate.is-open .far3 { stroke-opacity: .9; transition: stroke-opacity .08s linear .52s; }
+.gate.is-gone { opacity: 0; pointer-events: none; transition: opacity .4s var(--settle); }
+/* Connected (Adam, 13 Oct): the password block steps away while the heading says so. */
+.gate.is-open .gate-row { opacity: 0; visibility: hidden; transition: opacity .3s var(--settle), visibility 0s linear .3s; }
+@keyframes drawin { to { stroke-dashoffset: 0; } }
+/* js/head.js marks a tab whose session already holds the unlock, so the gate never flashes on a reload. */
+html.gate-passed .gate { display: none; }
+
+/* ⛔ Reduced motion (spec §8): the 404 and gate circuits are still. The gate swaps instantly. */
+@media (prefers-reduced-motion: reduce) {
+  .circuit .pulse, .circuit--404 .pulse, .gate.is-wrong .pulse { display: none; animation: none; }
+  .circuit .spark, .circuit--404 .spark, .gate.is-wrong .spark { animation: none; opacity: 0; }
+  .gate.is-open .power, .gate.is-open .bridge { animation: none; stroke-dashoffset: 0; }
+  .gate.is-open *, .gate.is-gone { transition: none !important; }
+}

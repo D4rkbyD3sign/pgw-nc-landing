@@ -1,12 +1,19 @@
-// Boot: load the skin, resolve state, load the app's data, render. Spec §2 is the spine of every branch.
+// Boot: load the skin, resolve state, pass the gate, mount the page, load the app's data, render.
+// Spec §2 is the spine of every branch.
 import { skin } from '../skin/2026.js'
 import { resolveState, clockAt } from './state.js'
 import { loadData } from './data.js'
+import { passGate } from './gate.js'
+import { startLoadin } from './loadin.js'
+import { startTrace } from './trace.js'
+import { startRunway } from './runway.js'
 
 const copy = skin.copy
 const $ = (sel, root = document) => root.querySelector(sel)
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)]
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches
+const layoutChanged = () => dispatchEvent(new Event('pgw:layout'))
+const EXTERNAL = 'noopener noreferrer'   // spec §10.1 item 4: every external link
 
 function el(tag, attrs = {}, ...children) {
   const e = document.createElement(tag)
@@ -23,12 +30,13 @@ const path = (obj, p) => p.split('.').reduce((o, k) => (o == null ? undefined : 
 const slot = (name) => $(`[data-slot="${name}"]`)
 const paragraphs = (text) => text.split(/\n\s*\n/).map((t) => t.trim()).filter(Boolean)
 
-// ============ which sections each clock state shows (spec §2.4) ============
+// ============ which sections each clock state shows (spec §2.4, §3 as revised 13 Oct) ============
 // ⭐ Reversible call 4 (partners stay on WRAPPED) is the single 'partners' entry in the wrapped list.
+// The load-in, monitor, trace and door do not appear in WRAPPED. The action under the monitor is BEFORE only (§2.4).
 const SECTIONS = {
-  before: ['topbar', 'hero', 'stage', 'intro', 'plan', 'where', 'bring', 'partners', 'speakers', 'questions', 'footer'],
-  live: ['topbar', 'hero', 'stage', 'intro', 'plan', 'where', 'bring', 'partners', 'speakers', 'questions', 'footer'],
-  wrapped: ['topbar', 'wrap', 'partners', 'footer'],
+  before: ['loadin', 'monitor', 'action', 'intro', 'plan', 'where', 'bring', 'partners', 'speakers', 'questions', 'door', 'footer'],
+  live: ['loadin', 'monitor', 'intro', 'plan', 'where', 'bring', 'partners', 'speakers', 'questions', 'door', 'footer'],
+  wrapped: ['topbar-wrapped', 'wrap', 'partners', 'footer'],
 }
 
 // ============ app links: the ONLY place one is ever created ============
@@ -36,13 +44,26 @@ const SECTIONS = {
 // refuses as well, so a future caller cannot slip one in.
 function appLink(state, label, kind) {
   if (!state.appOpen) throw new Error('appLink called while appOpen is false')
-  return el('a', { class: `pill pill--${kind}`, href: skin.appUrl }, label)
+  return el('a', { class: `pill pill--${kind}`, href: skin.appUrl, rel: EXTERNAL }, label)
 }
 
-// ============ video: click-to-play + THEATRE on play (spec §5.4, manual Revision 2) ============
+/** The app action (spec §2.3 B): the lime pill + helper when the app is open, otherwise the pending line (§5.2).
+ *  Used under the monitor (BEFORE) and again as the door (§5.17, BEFORE + LIVE): same component, same words. */
+function appAction(state) {
+  if (state.appOpen) return [appLink(state, copy.app.heroPill, 'lime'), el('small', { class: 'helper', text: copy.app.heroHelper })]
+  // The pending line: a sentence, not a control. Not a link, not focusable, not lime.
+  if (state.appOpensOn) {
+    const [pre, post] = copy.app.pending.split('{appOpensOn}')
+    return [el('p', { class: 'pending' }, el('span', {}, pre, el('span', { class: 'nowrap', text: state.appOpensOn }), post))]
+  }
+  // No date (Adam, 8 Oct, option a): the same pending line, reading exactly "The conference app opens soon."
+  return [el('p', { class: 'pending' }, el('span', { text: copy.app.pendingSoon }))]
+}
+
+// ============ video: click-to-play + THEATRE on play (spec §5.4) ============
 // One component for the trailer and the WRAPPED highlights video. Everything a host needs lives in its
 // data-attributes, so the poster can be rebuilt on close with nothing bound to it: clicks are handled by
-// ONE delegated listener (bindVideo below). A listener bound to the play button would die with the
+// ONE delegated listener (bindClicks below). A listener bound to the play button would die with the
 // first poster it was bound to (seen in mock v4).
 function videoHost({ id, playLabel, playAria, iframeTitle }) {
   const host = el('div', { class: 'video', 'data-video': id, 'data-iframe-title': iframeTitle, 'data-play-label': playLabel || '', 'data-play-aria': playAria || '' })
@@ -54,7 +75,7 @@ function poster(host) {
   const { video: id, playLabel, playAria } = host.dataset
   return el('div', { class: 'video-card' },
     el('img', { src: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`, alt: '', loading: 'lazy', decoding: 'async' }),
-    el('button', { class: 'play', type: 'button', 'data-action': 'play', 'aria-label': playAria || null },
+    el('button', { class: playLabel ? 'play' : 'play is-bare', type: 'button', 'data-action': 'play', 'aria-label': playAria || null },
       el('i', { 'aria-hidden': 'true' }), playLabel ? el('span', { text: playLabel }) : null))
 }
 
@@ -62,23 +83,24 @@ let videoBusy = false
 /** Run a DOM change as a View Transition where supported; instantly under reduced motion or without the API.
  *  `after` runs once the change has SETTLED (focus moves wait for it: spec §5.4). */
 function transition(mutate, after) {
+  const done = () => { after(); videoBusy = false; layoutChanged() }
   if (reduceMotion || typeof document.startViewTransition !== 'function') {
     mutate()
-    requestAnimationFrame(() => { after(); videoBusy = false })
+    requestAnimationFrame(done)
     return
   }
   const vt = document.startViewTransition(mutate)
-  vt.finished.then(after, after).finally(() => { videoBusy = false })
+  vt.finished.then(done, done)
 }
 
 function openVideo(host) {
   if (videoBusy || host.classList.contains('is-open')) return
   videoBusy = true
-  const stage = host.closest('.stage')
+  const monitor = host.closest('.monitor')
   transition(() => {
     // Click-to-play: no YouTube iframe, and so no cookies, until the reader asks.
     host.classList.add('is-open')
-    stage?.classList.add('is-theatre')
+    monitor?.classList.add('is-theatre')
     host.replaceChildren(
       el('div', { class: 'close-row' }, el('button', { class: 'pill pill--quiet close-video', type: 'button', 'data-action': 'close' }, copy.trailer.close)),
       el('iframe', {
@@ -100,13 +122,27 @@ function closeVideo(host) {
   transition(() => {
     // Removing the iframe stops the video. The poster comes back fresh.
     host.classList.remove('is-open')
-    host.closest('.stage')?.classList.remove('is-theatre')
+    host.closest('.monitor')?.classList.remove('is-theatre')
     host.replaceChildren(poster(host))
   }, () => $('[data-action="play"]', host)?.focus({ preventScroll: true }))
 }
 
-function bindVideo() {
-  // ⛔ The ONE delegated click listener for every video on the page (Revision 2), and the map's tap (§5.12).
+/** Open or close a disclosure: a "What it means" toggle or a speaker's bio (one shape for both). */
+function toggle(btn) {
+  const open = btn.getAttribute('aria-expanded') !== 'true'
+  btn.setAttribute('aria-expanded', String(open))
+  const panel = document.getElementById(btn.getAttribute('aria-controls'))
+  panel.classList.toggle('is-open', open)
+  if (open) panel.removeAttribute('aria-hidden')
+  else panel.setAttribute('aria-hidden', 'true')
+  // The page grows: let the trace re-measure once the reveal has settled (and at once, for the instant case).
+  layoutChanged()
+  setTimeout(layoutChanged, reduceMotion ? 0 : 480)
+}
+
+function bindClicks() {
+  // ⛔ The ONE delegated click listener: every video, the map's tap (§5.12), the dress definitions (§5.18) and the
+  // speaker bios (§5.16). A speaker with no bio is a plain row, so clicking it matches nothing here and does nothing.
   document.addEventListener('click', (e) => {
     const mapBtn = e.target.closest('[data-action="map"]')
     if (mapBtn) {
@@ -114,6 +150,8 @@ function bindVideo() {
       if (card && !card.classList.contains('is-loaded')) loadMap(card)
       return
     }
+    const disclosure = e.target.closest('button.means-t, button.sp')
+    if (disclosure) return toggle(disclosure)
     const btn = e.target.closest('[data-action="play"], [data-action="close"]')
     const host = btn?.closest('.video[data-video]')
     if (!host) return
@@ -157,9 +195,9 @@ function youTubeId(url) {
 
 // ============ sections ============
 function renderTopbar(state) {
-  // Touchpoint A (spec §2.3). ⭐ Reversible call 2 lives in this one branch:
-  // the app pill shows only when the app is open, and never on WRAPPED (its one door is the wrap block).
-  if (state.appOpen && state.clock !== 'wrapped') slot('topbar-app').append(appLink(state, copy.app.topbar, 'quiet'))
+  // Touchpoint A (spec §2.3), on the load-in. ⭐ Reversible call 2 lives in this one branch:
+  // the app pill shows only when the app is open. (WRAPPED's top bar is logo-only markup: its one door is the wrap block.)
+  if (state.appOpen) slot('topbar-app').append(appLink(state, copy.app.topbar, 'quiet'))
 }
 
 /** Hero facts derived from the app's data: the when-line and the tagline. Absent if the data is. */
@@ -185,29 +223,7 @@ function renderHeroFacts(data) {
   else slot('tagline').remove()
 }
 
-/** The hero parts that need no app data: the motif and the action (Touchpoint B). Rendered before the data step. */
-function renderHeroShell(state) {
-  slot('motif').innerHTML = skin.motif
-
-  // Touchpoint B (spec §2.3). In LIVE the hero has NO action: the door moves to the countdown card.
-  const action = slot('hero-action')
-  if (state.clock === 'before') {
-    if (state.appOpen) {
-      action.append(appLink(state, copy.app.heroPill, 'lime'), el('small', { class: 'helper', text: copy.app.heroHelper }))
-    } else if (state.appOpensOn) {
-      // The pending line (spec §5.2): a sentence, not a control. Not a link, not focusable, not lime.
-      // The date is held on one line (a span, so textContent stays exactly the sentence).
-      const [pre, post] = copy.app.pending.split('{appOpensOn}')
-      action.append(el('p', { class: 'pending' }, el('span', {}, pre, el('span', { class: 'nowrap', text: state.appOpensOn }), post)))
-    } else {
-      // No date (Adam, 8 Oct, option a): the same pending line, reading exactly "The conference app opens soon."
-      action.append(el('p', { class: 'pending' }, el('span', { text: copy.app.pendingSoon })))
-    }
-  }
-  if (!action.childElementCount) action.remove()
-}
-
-function renderStage(state) {
+function renderMonitor(state) {
   slot('trailer').replaceWith(videoHost({ id: skin.trailerId, playLabel: copy.trailer.play, iframeTitle: copy.trailer.iframeTitle }))
 
   const card = slot('countdown')
@@ -242,11 +258,11 @@ function tickCountdown() {
 
 function renderIntro() {
   const [open, body, close] = copy.intro
-  slot('intro').append(el('p', { class: 'open', id: 'intro-open', text: open }), el('p', { text: body }), el('p', { class: 'close', text: close }))
+  slot('intro').append(el('p', { class: 'open', id: 'intro-open', text: open }), el('p', { class: 'body', text: body }), el('p', { class: 'close', text: close }))
 }
 
 function renderDays(data) {
-  // Day cards (manual Revision 1): the day's FIRST session + every SOCIAL session, verbatim from the app.
+  // Day cards (spec §5.6): the day's FIRST session + every SOCIAL session, verbatim from the app.
   const days = data?.conference?.days
   if (days && data.sessions) {
     const toMin = (t) => +t.slice(0, 2) * 60 + +t.slice(3, 5)
@@ -263,8 +279,10 @@ function renderDays(data) {
           el('span', { class: 'row-text' }, el('span', { text: s.title }), cruiseLine(s))))),
       ))
     })
-    if (grid.childElementCount) slot('days').replaceWith(el('p', { class: 'lede', text: copy.labels.planLede }), grid)
-    else slot('days').remove()
+    if (grid.childElementCount) {
+      ;[...grid.children].forEach((c, k) => c.style.setProperty('--i', k))
+      slot('days').replaceWith(el('p', { class: 'lede', text: copy.labels.planLede }), grid)
+    } else slot('days').remove()
   } else slot('days').remove()
 }
 
@@ -278,8 +296,9 @@ function cruiseLine(s) {
 }
 
 function renderCpd() {
-  // PGW's own wording (CPD patch, 6 Oct): plain text, no inline link. The CPD Policy stays linked in the footer.
-  slot('cpd').textContent = copy.cpd.text
+  // PGW's own wording (CPD patch, 6 Oct): plain text, no inline link (the CPD Policy stays linked in the footer).
+  // Spec §5.5a: full width, the tag as a bullet, every line of the text starting to the right of it.
+  slot('cpd').append(el('span', { class: 'cpd-tag', text: copy.cpd.tag }), el('span', { class: 'cpd-text', text: copy.cpd.text }))
 }
 
 function renderWhere(data) {
@@ -290,7 +309,7 @@ function renderWhere(data) {
     el('div', { class: 'venue-info' },
       el('h3', { text: v.name }),
       el('address', { text: v.address }),
-      el('a', { class: 'pill pill--quiet', href: v.mapUrl, rel: 'noopener' }, copy.mock.maps),
+      el('a', { class: 'pill pill--quiet', href: v.mapUrl, rel: EXTERNAL }, copy.mock.maps),
     ),
     skin.mapEmbedSrc ? mapPoster() : null,
   ))
@@ -319,16 +338,28 @@ function loadMap(card) {
     allowfullscreen: true,
   })
   card.classList.add('is-loaded')
-  card.replaceChildren(f)   // instant swap: no animation in any motion setting (reduced motion: none required)
+  card.replaceChildren(f)   // instant swap: no animation in any motion setting
   f.focus()
 }
 
 function renderWear() {
   // What to wear (spec §3 item 7): cards in date order. ⭐ Content-gated: an empty list = the section is absent (§6.3).
+  // "What it means" (spec §5.18, approved 13 Oct): a disclosure under each dress code, when the card carries one.
   const items = Array.isArray(skin.whatToWear) ? skin.whatToWear.filter((w) => w && w.label && w.value) : []
   if (!items.length) return $('[data-section="bring"]').remove()
-  slot('bring').append(...items.map((w) => el('div', { class: 'card wear-card' },
-    el('p', { class: 'wear-label', text: w.label }), el('p', { class: 'wear-value', text: w.value }))))
+  slot('bring').append(...items.map((w, k) => {
+    const card = el('div', { class: 'card wear-card' }, el('p', { class: 'wear-label', text: w.label }), el('p', { class: 'wear-value', text: w.value }))
+    card.style.setProperty('--i', k)
+    const means = (w.means || '').trim()
+    if (means) {
+      const id = `means-${k + 1}`
+      card.append(
+        el('button', { class: 'means-t', type: 'button', 'aria-expanded': 'false', 'aria-controls': id },
+          el('i', { 'aria-hidden': 'true', text: '+' }), copy.wear.means),
+        el('div', { class: 'reveal means', id, 'aria-hidden': 'true' }, el('div', {}, el('p', { text: means }))))
+    }
+    return card
+  }))
 }
 
 function renderPartners(data) {
@@ -336,8 +367,8 @@ function renderPartners(data) {
   const host = slot('partners')
   const by = (tier) => data.partners.filter((p) => p.tier === tier)
   const logo = (p, alt) => {
-    // ⛔ Never lazy (spec §5.7): ticker logos slide into view and would arrive blank.
-    const img = el('img', { src: p.logo, alt, loading: 'eager', decoding: 'async' })
+    // ⛔ Never lazy (spec §5.7): runway logos slide into view and would arrive blank.
+    const img = el('img', { src: p.logo, alt, loading: 'eager', decoding: 'async', draggable: 'false' })
     img.addEventListener('error', () => img.replaceWith(el('span', { class: 'logo-fallback', text: alt || p.name, 'aria-hidden': alt ? null : 'true' })))
     return img
   }
@@ -351,23 +382,68 @@ function renderPartners(data) {
   }
   const plat = by('platinum')
   if (plat.length) {
-    host.append(el('p', { class: 'tier', text: copy.mock.platinum }),
-      el('ul', { class: 'plat' }, ...plat.map((p) => el('li', {}, p.logo ? logo(p, '') : null, el('span', { text: p.name })))))
+    const ul = el('ul', { class: 'plat' }, ...plat.map((p) => el('li', {}, p.logo ? logo(p, '') : null, el('span', { text: p.name }))))
+    ;[...ul.children].forEach((c, k) => c.style.setProperty('--i', k))
+    host.append(el('p', { class: 'tier', text: copy.mock.platinum }), ul)
   }
-  // Ticker: Gold Plus → Gold → sponsor, then any untiered partner LAST (never dropped).
-  const ticker = [...by('goldplus'), ...by('gold'), ...by('sponsor'), ...data.partners.filter((p) => p.tier === null)]
-  if (ticker.length) {
-    const list = (dup) => el('ul', { 'aria-hidden': dup ? 'true' : null, class: dup ? 'dup' : null },
-      ...ticker.map((p) => el('li', {}, p.logo ? logo(p, dup ? '' : p.name) : el('span', { text: p.name }))))
-    host.append(el('p', { class: 'tier', text: copy.mock.ticker }),
-      el('div', { class: 'marquee' }, el('div', { class: 'track' }, list(false), list(true))))
+  // The runway: Gold Plus → Gold → sponsor, then any untiered partner LAST (never dropped).
+  const list = [...by('goldplus'), ...by('gold'), ...by('sponsor'), ...data.partners.filter((p) => p.tier === null)]
+  if (list.length) {
+    const ul = (dup) => el('ul', { 'aria-hidden': dup ? 'true' : null, class: dup ? 'dup' : null },
+      ...list.map((p) => el('li', {}, p.logo ? logo(p, dup ? '' : p.name) : el('span', { text: p.name }))))
+    const strip = el('div', { class: 'runway' }, el('div', { class: 'track' }, ul(false), ul(true)))
+    const nav = el('div', { class: 'runway-nav' },
+      el('button', { class: 'rw-btn', type: 'button', 'data-dir': 'prev', 'aria-label': copy.runway.prev }, el('span', { 'aria-hidden': 'true', text: '←' })),
+      el('button', { class: 'rw-btn', type: 'button', 'data-dir': 'next', 'aria-label': copy.runway.next }, el('span', { 'aria-hidden': 'true', text: '→' })))
+    host.append(el('p', { class: 'tier', text: copy.mock.ticker }), strip, nav)
+    if (!reduceMotion) startRunway(strip, nav)
   }
 }
 
+// ============ speakers (spec §5.16) ============
+// "Dr" is skipped; the first letters of the first two remaining words (the app's own initials rule).
+const initials = (name) => name.replace(/^Dr\.?\s+/, '').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase()
+
+function speakerRow(s, key) {
+  const face = el('span', { class: 'face', 'aria-hidden': 'true' })
+  const ini = () => el('span', { class: 'ini', text: initials(s.name) })
+  if (s.photo) {
+    const img = el('img', { src: s.photo, alt: '', loading: 'lazy', decoding: 'async' })
+    img.addEventListener('error', () => img.replaceWith(ini()))
+    face.append(img)
+  } else face.append(ini())
+  const text = el('span', {}, el('b', { text: s.name }), s.title ? el('span', { class: 't', text: s.title }) : null, el('span', { class: 'o', text: s.org }))
+  const li = el('li', {})
+  if (s.bio) {
+    const id = `bio-${key}`
+    li.append(
+      el('button', { class: 'sp', type: 'button', 'aria-expanded': 'false', 'aria-controls': id }, face, text, el('i', { 'aria-hidden': 'true', text: '+' })),
+      el('div', { class: 'reveal bio', id, 'aria-hidden': 'true' }, el('div', {}, el('p', { text: s.bio }))))
+  } else {
+    // No bio: a plain row, not a button. Clicking it does nothing.
+    li.append(el('div', { class: 'sp' }, face, text))
+  }
+  return li
+}
+
+/** Two INDEPENDENT stacks from 760px: the first half down the left, the rest down the right. Reading order = DOM order. */
+function stacks(list, keyPrefix, offset) {
+  const half = Math.ceil(list.length / 2)
+  const a = el('ul', { class: 'stack' }), b = el('ul', { class: 'stack' })
+  list.forEach((s, k) => {
+    const row = speakerRow(s, `${keyPrefix}-${k}`)
+    row.style.setProperty('--i', offset + k)
+    ;(k < half ? a : b).append(row)
+  })
+  return el('div', { class: 'people' }, a, b)
+}
+
 function renderSpeakers(data) {
-  if (!data?.speakers) return $('[data-section="speakers"]').remove()
-  slot('speakers').append(...data.speakers.map((s) =>
-    el('li', {}, el('b', { text: s.name }), s.title ? el('span', { class: 't', text: s.title }) : null, el('span', { class: 'o', text: s.org }))))
+  const host = slot('speakers')
+  const keynotes = Array.isArray(skin.keynotes) ? skin.keynotes.filter((k) => k && k.name) : []
+  if (keynotes.length) host.append(el('p', { class: 'sp-group', text: copy.speakers.keynotes }), stacks(keynotes, 'kn', 0))
+  if (data?.speakers?.length) host.append(el('p', { class: 'sp-group', text: copy.speakers.partners }), stacks(data.speakers, 'sp', keynotes.length))
+  if (!host.childElementCount) $('[data-section="speakers"]').remove()
 }
 
 function renderContacts() {
@@ -377,7 +453,7 @@ function renderContacts() {
 
 function renderFooter() {
   slot('licence-numbers').textContent = `${copy.footer.afsl} · ${copy.footer.abn}`
-  slot('policies').append(...copy.footer.policies.map((p) => el('a', { href: p.href, text: p.label })))
+  slot('policies').append(...copy.footer.policies.map((p) => el('a', { href: p.href, rel: EXTERNAL, text: p.label })))
 }
 
 function renderWrap(state) {
@@ -403,29 +479,26 @@ function renderWrap(state) {
 }
 
 // ============ motion (spec §8): content is visible by default; script only ADDS animation ============
-function motion() {
-  if (reduceMotion) return
-  const els = $$('.rv')
-  if ('IntersectionObserver' in window) {
-    document.documentElement.classList.add('rv-on')
-    const io = new IntersectionObserver((es) => es.forEach((x) => {
-      if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target) }
-    }), { rootMargin: '0px 0px -8% 0px' })
-    els.forEach((e) => io.observe(e))
-  }
-  const net = $('.motif')
-  if (net) {
-    let raf = 0
-    addEventListener('scroll', () => {
-      if (!raf) raf = requestAnimationFrame(() => { net.style.transform = `translateY(${Math.min(scrollY, 600) * 0.18}px)`; raf = 0 })
-    }, { passive: true })
-  }
+function reveals() {
+  if (reduceMotion || !('IntersectionObserver' in window)) return
+  document.documentElement.classList.add('rv-on')
+  const io = new IntersectionObserver((es) => es.forEach((x) => {
+    if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target) }
+  }), { rootMargin: '0px 0px -8% 0px' })
+  $$('.rv').forEach((e) => io.observe(e))
 }
 
 // ============ boot ============
 async function boot() {
   const state = resolveState(skin, { search: location.search })
   document.documentElement.dataset.state = state.clock
+
+  // ⛔ THE GATE (spec §2.6): nothing of the page is in the document until it opens. It fails closed.
+  await passGate(state, skin, copy.gate, reduceMotion)
+
+  const shell = document.getElementById('shell')
+  document.body.append(shell.content.cloneNode(true))
+  shell.remove()
 
   // Remove every section this clock state does not show, before anything is filled.
   for (const s of $$('[data-section]')) if (!SECTIONS[state.clock].includes(s.dataset.section)) s.remove()
@@ -438,18 +511,25 @@ async function boot() {
 
   // ---- 1 · Everything that needs NO app data renders first (Wren N-2): a data failure cannot stop it. ----
   if (has('wrap')) renderWrap(state)
-  renderTopbar(state)
-  if (has('hero')) renderHeroShell(state)
-  if (has('stage')) renderStage(state)
+  if (has('loadin')) { renderTopbar(state); slot('motif').innerHTML = skin.motif }
+  if (has('monitor')) renderMonitor(state)
+  if (has('action') && state.clock === 'before') slot('action').append(...appAction(state))
   if (has('intro')) renderIntro()
   if (has('plan')) renderCpd()
-  if (has('questions')) renderContacts()
-  renderFooter()
   if (has('bring')) renderWear()
+  if (has('questions')) renderContacts()
+  if (has('door')) {
+    const parts = appAction(state)
+    parts[0].setAttribute('data-anchor', '')   // the trace's terminal node sits on the action itself
+    slot('door').append(...parts)
+  }
+  renderFooter()
 
   document.documentElement.classList.add('ready')
-  bindVideo()
-  motion()
+  bindClicks()
+  let loadin = null
+  if (has('loadin')) loadin = startLoadin($('[data-section="loadin"]'), { skin, copy, reduce: reduceMotion })
+  reveals()
 
   // Countdown, and a reload when the real clock crosses a boundary (never under a ?state= override).
   tickCountdown()
@@ -466,7 +546,7 @@ async function boot() {
     console.error('[data] loading the app data failed; derived sections render absent.', err)
   }
   const derived = [
-    ['hero', () => renderHeroFacts(data), '[data-slot="when"], [data-slot="tagline"]'],
+    ['loadin', () => renderHeroFacts(data), '[data-slot="when"], [data-slot="tagline"]'],
     ['plan', () => renderDays(data), '[data-slot="days"], [data-section="plan"] .lede, [data-section="plan"] .grid2'],
     ['where', () => renderWhere(data), '[data-section="where"]'],
     ['partners', () => renderPartners(data), '[data-section="partners"]'],
@@ -481,6 +561,10 @@ async function boot() {
       for (const n of $$(absentSel)) n.remove()
     }
   }
+  loadin?.relayout()
+
+  // The trace starts once every section is in place (BEFORE + LIVE only: no trace in WRAPPED).
+  if (has('door')) startTrace($('#page'), { reduce: reduceMotion })
 }
 
 boot().catch((err) => console.error('[boot] the page failed to start.', err))

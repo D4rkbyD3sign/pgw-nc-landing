@@ -1,13 +1,20 @@
 // ImplementAI 2026 skin. 2027 = a new file with the same shape. Shell code never changes for a new year.
 // Generated from build/tools/skin-template.js by build/tools/gen_skin.py. Every string under `copy`,
-// the tier map and the motif were PASTED by that script from their source files, never typed.
-// Flipping one of the four fields below is a one-line hand edit; that is expected and fine.
+// the keynotes, the tier map and the motif were PASTED by that script from their source files, never typed.
+// Flipping one of the hand-set fields below is a one-line hand edit; that is expected and fine.
 export const skin = {
-  // ---- the four hand-set fields (spec §2.2). One line each. ----
+  // ---- the hand-set fields (spec §2.2). One line each. ----
   appOpen: false,                       // flip to true by hand once the app is confirmed ready (Lumen + Adam)
-  appOpensOn: '',                       // '' = "The conference app opens soon." (Adam, 8 Oct: no date on the page)
+  appOpensOn: 'Friday 16 October',      // Adam, 13 Oct (spec §2.3). '' = "The conference app opens soon."
   materialsLinked: false,               // true ONLY once the app's Materials tab links to PGW's folder
   highlightsVideo: '',                  // '' = wrap V1; a YouTube URL = wrap V2
+
+  // ---- the pre-launch gate (spec §2.6, §5.20). ⛔ A CURTAIN, NOT A LOCK: the files stay public. ----
+  // gateHash is the SHA-256 (lowercase hex) of the password. ⛔ NEVER the password itself, anywhere.
+  // Launch = gate: false, then re-run gen_skin.py (it lifts the noindex meta, the gate markup and robots.txt's
+  // disallow in the same run). Anything other than exactly `false` keeps the gate up (fails closed).
+  gate: true,
+  gateHash: '8466b42e1d2ee4bad78e11c89629d60a6506d38dbc21cfb0e6095fef6088cf05',
 
   // ---- clock boundaries, as instants (spec §2.1) ----
   liveFrom:   '2026-10-28T21:30:00Z',   // 08:30 Thu 29 Oct, Australia/Hobart
@@ -15,9 +22,21 @@ export const skin = {
 
   // ---- media + copy carried by the skin ----
   trailerId: 'lcDtq65xtgs',
+  // The title sequence (spec §5.13): one silent clip, played once. 1080p for wide screens, 720p for phones.
+  // `wideMedia` decides which screens take the 1080p cut; every other screen takes the 720p.
+  titleSequence: {
+    wide: 'video/title-seq-1080.mp4',
+    narrow: 'video/title-seq.mp4',
+    wideMedia: '(min-aspect-ratio: 1/1) and (min-width: 900px)',
+    first: 'video/title-seq-first.jpg',   // poster: the film's first frame
+    end: 'video/title-seq-end.jpg',       // the finished card, shown as a still under reduced motion
+    landsAt: 10.5,                        // seconds in: the card's lettering is up, the words arrive
+    cardEnd: 0.80,                        // the card's lettering ends 80% down the frame (measured on the end still)
+  },
   // content-gated (spec §6.3): empty = NOT rendered at all.
-  // What to wear (spec §3 item 7): cards in date order, each { label, value }. [] = section absent.
-  whatToWear: [{"label": "Conference days · Thu & Fri", "value": "Business casual"}, {"label": "Mustique cruise · Thu evening", "value": "Cocktail"}, {"label": "Annual Awards Dinner · Fri evening", "value": "Cocktail"}],
+  // What to wear (spec §3 item 7): cards in date order, each { label, value, means }. [] = section absent.
+  // `means` is the "What it means" definition (spec §5.18, approved by Adam 13 Oct). '' = no toggle on that card.
+  whatToWear: [{"label": "Conference days · Thu & Fri", "value": "Business casual", "means": "Smart but relaxed: trousers or chinos with a collared shirt or blouse. A jacket if you like; no tie needed."}, {"label": "Mustique cruise · Thu evening", "value": "Cocktail", "means": "Dressed up for the evening: a suit or blazer (tie optional), or a cocktail dress or smart separates."}, {"label": "Annual Awards Dinner · Fri evening", "value": "Cocktail", "means": "Dressed up for the evening: a suit or blazer (tie optional), or a cocktail dress or smart separates."}],
   // Getting there text panel (plain text; a blank line starts a new paragraph). '' = absent.
   gettingThere: '',
   // day-card headings (manual Revision 1): '' = not rendered. Index 0 = day 1.
@@ -34,10 +53,22 @@ export const skin = {
   appUrl: 'https://app.pgwconference.com.au',
   city: 'Hobart',
 
-  // ---- partner tiers: a keyed COPY of the app's PARTNER_TIER (data.js:372-378 @ v33, ec9b718) ----
+  // ---- keynotes and spotlight (spec §5.16): skin content, not app data. In page order. ----
+  // photo: a path inside site/ or '' (initials). bio: verbatim text or '' (a plain row, not a button).
+  keynotes: [
+    {
+      "name": "Dr Lila Landowski",
+      "title": "Neuroscientist · University of Tasmania",
+      "org": "Opening keynote · Thu 29 Oct",
+      "photo": "img/keynotes/kn-landowski.jpg",
+      "bio": "Dr Lila Landowski is a multi-award-winning neuroscientist and senior lecturer at the University of Tasmania, Board Director of Science & Technology Australia, World Health Organisation Fides health ambassador and Executive Director of the Australian Brain Alliance. Passionate about making science useful in everyday life, Lila brings brain science to millions through radio, TV screens, podcasts and live events. Her TEDx talk on the neuroscience of learning faster is the #3 most-watched TEDx talk in the world since it came out in 2023. As a keynote speaker, she is trusted by Fortune 500 and ASX 50 companies, governments, athletes and leaders to translate neuroscience into practical strategies for optimising performance. An Australian Museum Eureka Award winner, Lila is on a mission to make brain science accessible to everyone."
+    }
+  ],
+
+  // ---- partner tiers: a keyed COPY of the app's PARTNER_TIER (data.js @ v33, ec9b718) ----
   // The app does not export it. js/data.js checks this against the app's partners at every load and
-  // console.errors any drift; an untiered partner still renders, last in the ticker. Delete this
-  // copy once the app exports PARTNER_TIER (v34).
+  // console.errors any drift; an untiered partner still renders, last in the runway. Delete this
+  // copy once the app exports PARTNER_TIER.
   partnerTiers: {"pep": "main", "afic": "platinum", "afm": "platinum", "gyrostat": "platinum", "hub24": "platinum", "mst": "platinum", "paradino": "platinum", "centuria": "goldplus", "macquarie": "goldplus", "millbrook": "goldplus", "openmarkets": "goldplus", "trilogy": "goldplus", "wam": "goldplus", "ellerston": "gold", "russell": "gold", "tal": "gold", "gda": "sponsor"},
 
   // ---- the ImplementAI node mark (PGW brand guide v1, motif box). Swaps out with the theme. ----
@@ -90,6 +121,7 @@ export const skin = {
       "caption": "National Conference 2025, Gold Coast"
     },
     "cpd": {
+      "tag": "CPD",
       "text": "Participation may earn you up to 12 hours of training toward your annual training requirements, including knowledge areas if appropriate. At the conclusion of the conference these hours will be automatically added to your Kaplan training register."
     },
     "labels": {
@@ -112,6 +144,30 @@ export const skin = {
       "maps": "Open in Google Maps ↗",
       "countdownEyebrow": "Doors open in",
       "timerAria": "Time until the conference opens"
+    },
+    "loadin": {
+      "scroll": "Scroll",
+      "pause": "Pause",
+      "play": "Play",
+      "replay": "Replay"
+    },
+    "runway": {
+      "prev": "Previous partners",
+      "next": "Next partners"
+    },
+    "speakers": {
+      "keynotes": "Keynote",
+      "partners": "Educational partners"
+    },
+    "wear": {
+      "means": "What it means"
+    },
+    "gate": {
+      "h1": "You're not connected.",
+      "label": "Password",
+      "button": "Connect",
+      "error": "That password didn't connect.",
+      "connected": "You're connected."
     },
     "contacts": [
       {

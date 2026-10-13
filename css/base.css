@@ -1,0 +1,50 @@
+/* PGW conference site: the shared base. Tokens are the app's own (spec §4, locked; identity v2 changes NO token).
+   Shared by the landing page, the gate screen and the 404. Spacing uses ONLY the 8px scale (spec §4.3). */
+
+:root {
+  --lime: #c8d562; --lime-deep: #b4c24a; --lime-ink: #676f25;
+  --ink: #272728; --ink-soft: #4a4744; --grey: #5c5853;
+  --paper: #faf9f6; --card: #ffffff; --greige: #efede8; --greige-line: #e4e1da;
+  --hair: rgba(39,39,40,.07); --on-dark-2: #a8a49c;
+  --radius: 24px; --radius-sm: 18px;
+  /* Elevation by ROLE (spec §4.3): one shadow per role, never one per component. */
+  --shadow-raised: 0 1px 2px rgba(39,39,40,.04), 0 14px 32px -18px rgba(39,39,40,.18);
+  --shadow-lifted: 0 2px 4px rgba(39,39,40,.05), 0 24px 48px -20px rgba(39,39,40,.26);
+  --shadow-lime: 0 1px 0 rgba(39,39,40,.08), 0 10px 24px -12px rgba(103,111,37,.55);
+  --font: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+  --settle: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; }
+/* ⛔ No sideways scroll at any width (spec §8). Bands are real elements; this clip on the ROOT is the second wall. */
+/* `hidden` first: Safari before iOS 16 ignores `clip` and falls back to it (Wren N-2). */
+html { overflow-x: hidden; overflow-x: clip; -webkit-text-size-adjust: 100%; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font); font-weight: 400; line-height: 1.55; }
+a { color: inherit; text-underline-offset: 3px; }
+img { max-width: 100%; }
+a:focus-visible, button:focus-visible, input:focus-visible, .pill:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+[hidden] { display: none !important; }   /* our display rules must never beat the browser's own [hidden] (seen in mock v8) */
+
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: 20px; padding-right: 20px; }
+@media (min-width: 900px) { .wrap { padding-left: 40px; padding-right: 40px; } }
+
+/* The `//` tell: mono labels */
+.eyebrow { font: 400 11px/1.4 var(--mono); letter-spacing: .13em; text-transform: uppercase; color: var(--grey); }
+.eyebrow::before { content: '// '; }
+
+/* ---------- pills (spec §5.1) ---------- */
+.pill { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; border-radius: 999px; font: 500 15px/1.2 var(--font); text-decoration: none; cursor: pointer;
+  transition: background-color .2s, transform .2s var(--settle), box-shadow .2s; }
+.pill--lime { background: var(--lime); color: var(--ink); padding: 16px 24px; box-shadow: var(--shadow-lime); border: 0; }
+.pill--lime:hover { background: var(--lime-deep); transform: translateY(-1px); }
+.pill--quiet { background: transparent; color: var(--ink); border: 1px solid var(--greige-line); padding: 8px 16px; font-size: 14px; }
+.pill--quiet:hover { background: var(--greige); }
+
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pill { transition: none; }
+  .pill--lime:hover { transform: none; }
+}
