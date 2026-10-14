@@ -2,7 +2,7 @@
 // the monitor to the door, and each section's node lights as you reach it. Input at the top, result at the bottom.
 //
 // Geometry: NETWORK (Adam, 12 Oct). The mark's own diagonal jogs (~34px) into each node; the line alternates between two
-// lanes at 30% / 70% of the gutter. It lives in the GUTTER ONLY: an absolutely positioned SVG inside .page, exactly as
+// lanes: 15% / 45% of the 40px gutter from 900px, 30% / 70% of the 20px gutter on phones. It lives in the GUTTER ONLY: an absolutely positioned SVG inside .page, exactly as
 // wide as the gutter and clipped to it, so it can never cause sideways scroll or sit on content. Decorative: aria-hidden.
 
 const NS = 'http://www.w3.org/2000/svg'
@@ -43,7 +43,9 @@ export function startTrace(page, { reduce }) {
     svg.setAttribute('width', String(g))
     svg.setAttribute('height', String(H))
     svg.setAttribute('viewBox', `0 0 ${g} ${H}`)
-    const lanes = [Math.round(g * 0.3) + 0.5, Math.round(g * 0.7) + 0.5]
+    // Lanes (spec §5.15, Nicole via Adam, option B, 13 Oct): 15% / 45% of the 40px gutter from 900px, so the near lane
+    // sits 21.5px off the text; 30% / 70% of the 20px phone gutter, unchanged. Keyed on the gutter the CSS gives, as the mock.
+    const lanes = (g >= 40 ? [0.15, 0.45] : [0.3, 0.7]).map((f) => Math.round(g * f) + 0.5)
     pts = nodes.map((e, i) => {
       const r = anchorOf(e).getBoundingClientRect()
       return {

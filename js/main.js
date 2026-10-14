@@ -262,21 +262,37 @@ function renderIntro() {
 }
 
 function renderDays(data) {
-  // Day cards (spec §5.6): the day's FIRST session + every SOCIAL session, verbatim from the app.
+  // Day cards (spec §5.6 KEY TIMES, Adam 14 Oct; LANDING ONLY). Three kinds of row, in time order:
+  //   opening: the day's first session's START, labelled by skin.dayOpenLabels[i] ('' or missing → the app's own title);
+  //   closing: the LATEST valid HH:MM `end` among the day's non-SOCIAL sessions, labelled by skin.dayCloseLabels[i]
+  //            ('' or missing label, or no valid end → no closing row). js/data.js checks `start` only, so `end` is
+  //            checked HERE;
+  //   evening: every other SOCIAL session, the app's title verbatim (the `eve` class, the cruise line).
+  // Times are derived from the app's data, never typed.
   const days = data?.conference?.days
   if (days && data.sessions) {
+    // A REAL time only: hours 00-23, minutes 00-59 (Wren's F-2 on the first drop: the shape-only /^\d{2}:\d{2}$/ let
+    // '99:99' through as "99:99 Day 1 closes"). Anything else is not an end; spec §5.6: absent, never invented.
+    const HHMM = /^(?:[01]\d|2[0-3]):[0-5]\d$/
     const toMin = (t) => +t.slice(0, 2) * 60 + +t.slice(3, 5)
+    const label = (list, i) => (typeof list?.[i] === 'string' ? list[i].trim() : '')
     const grid = el('div', { class: 'grid2' })
     days.forEach((d, i) => {
       const ofDay = data.sessions.filter((s) => s.day === d.day).sort((a, b) => toMin(a.start) - toMin(b.start))
       if (!ofDay.length) return
-      const rows = [ofDay[0], ...ofDay.slice(1).filter((s) => s.kind === 'SOCIAL')]
+      const first = ofDay[0]
+      const rows = [{ at: first.start, text: label(skin.dayOpenLabels, i) || first.title, s: first, rank: 0 }]
+      const ends = ofDay.filter((s) => s.kind !== 'SOCIAL' && typeof s.end === 'string' && HHMM.test(s.end)).map((s) => s.end)
+      const closeText = label(skin.dayCloseLabels, i)
+      if (closeText && ends.length) rows.push({ at: ends.reduce((a, b) => (toMin(b) > toMin(a) ? b : a)), text: closeText, s: null, rank: 1 })
+      for (const s of ofDay.slice(1)) if (s.kind === 'SOCIAL') rows.push({ at: s.start, text: s.title, s, rank: 2 })
+      rows.sort((a, b) => toMin(a.at) - toMin(b.at) || a.rank - b.rank)
       const heading = (skin.dayHeadings?.[i] ?? '').trim()
       grid.append(el('article', { class: 'card day' },
         el('p', { class: 'day-label', text: `Day ${d.day} · ${d.label}` }),
         heading ? el('h3', { text: heading }) : null,
-        el('ul', {}, ...rows.map((s) => el('li', { class: s.kind === 'SOCIAL' ? 'eve' : null }, el('time', { text: s.start }),
-          el('span', { class: 'row-text' }, el('span', { text: s.title }), cruiseLine(s))))),
+        el('ul', {}, ...rows.map((r) => el('li', { class: r.s?.kind === 'SOCIAL' && r.rank === 2 ? 'eve' : null }, el('time', { text: r.at }),
+          el('span', { class: 'row-text' }, el('span', { text: r.text }), r.s ? cruiseLine(r.s) : null)))),
       ))
     })
     if (grid.childElementCount) {
@@ -284,6 +300,16 @@ function renderDays(data) {
       slot('days').replaceWith(el('p', { class: 'lede', text: copy.labels.planLede }), grid)
     } else slot('days').remove()
   } else slot('days').remove()
+}
+
+/** Spec §6.4 (14 Oct): the plan heading breaks ONLY at its colon. The words stay ONE skin string; it is split at its
+ *  first ": " into two halves that each keep together (`.nobr`), so a phone reads "Two days in Hobart:" / "key times".
+ *  No ": " → the heading is left exactly as filled. Text nodes only, never HTML. */
+function breakAtColon(h) {
+  const text = h?.textContent ?? ''
+  const at = text.indexOf(': ')
+  if (at < 0) return
+  h.replaceChildren(el('span', { class: 'nobr', text: text.slice(0, at + 1) }), ' ', el('span', { class: 'nobr', text: text.slice(at + 2) }))
 }
 
 /** Spec §5.6: the departure line under the cruise row. The pier is that session's venue.name from the app (never
@@ -506,6 +532,7 @@ async function boot() {
   // Fill every skin word that has a home in the markup.
   for (const n of $$('[data-text]')) n.textContent = path(copy, n.dataset.text) ?? ''
   for (const n of $$('[data-alt]')) n.alt = path(copy, n.dataset.alt) ?? ''
+  breakAtColon($('#plan-h'))
 
   const has = (name) => SECTIONS[state.clock].includes(name)
 

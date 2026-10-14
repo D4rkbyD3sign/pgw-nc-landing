@@ -178,7 +178,9 @@ h1 { font-size: clamp(44px, 9vw, 92px); line-height: 1.08; letter-spacing: -.04e
 /* ---------- sections ---------- */
 .s { padding-top: 64px; }
 .h { font-size: clamp(26px, 3.4vw, 36px); line-height: 1.1; letter-spacing: -.03em; font-weight: 500; margin-top: 12px; text-wrap: balance; }
+.h .nobr { white-space: nowrap; }   /* key times (spec §6.4, 14 Oct): the plan heading breaks only at its colon */
 .lede { color: var(--grey); margin-top: 12px; max-width: 34em; font-size: 16px; }
+[data-section="plan"] .lede { text-wrap: balance; }   /* spec §6.4 (14 Oct, Revision 2): never a lone "app." on the last line */
 .card { background: var(--card); border: 1px solid var(--hair); border-radius: var(--radius); box-shadow: var(--shadow-raised); padding: 24px;
   transition: transform .2s var(--settle), box-shadow .2s var(--settle); }
 .card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lifted); }

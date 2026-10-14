@@ -13,7 +13,7 @@ export const skin = {
   // gateHash is the SHA-256 (lowercase hex) of the password. ⛔ NEVER the password itself, anywhere.
   // Launch = gate: false, then re-run gen_skin.py (it lifts the noindex meta, the gate markup and robots.txt's
   // disallow in the same run). Anything other than exactly `false` keeps the gate up (fails closed).
-  gate: true,
+  gate: false,
   gateHash: '8466b42e1d2ee4bad78e11c89629d60a6506d38dbc21cfb0e6095fef6088cf05',
 
   // ---- clock boundaries, as instants (spec §2.1) ----
@@ -41,6 +41,10 @@ export const skin = {
   gettingThere: '',
   // day-card headings (manual Revision 1): '' = not rendered. Index 0 = day 1.
   dayHeadings: ['', ''],
+  // key times (spec §5.6, Adam 14 Oct; LANDING ONLY, the app keeps its own titles). Index 0 = day 1. PASTED from the spec.
+  // Opening row: '' = the app's own title for that day's first session. Closing row: '' = no closing row.
+  dayOpenLabels: ["Event and Day 1 begins", "Day 2 begins"],
+  dayCloseLabels: ["Day 1 closes", "Day 2 closes"],
   // cruise departure line under the cruise row (spec §5.6; wording approved by Adam 8 Oct).
   // {pier} is filled from the app's data (that session's venue.name), never typed. '' = line absent.
   cruiseSessionId: 'd1-cruise',
@@ -126,8 +130,8 @@ export const skin = {
     },
     "labels": {
       "planEyebrow": "What's planned",
-      "planHeading": "Two days in Hobart",
-      "planLede": "The headlines. The full agenda lives in the app.",
+      "planHeading": "Two days in Hobart: key times",
+      "planLede": "The headlines. The complete agenda is found on the PGW National Conference app.",
       "whereEyebrow": "Where",
       "bringEyebrow": "Before you pack",
       "bringHeading": "What to wear",
