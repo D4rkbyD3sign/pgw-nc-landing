@@ -66,6 +66,13 @@ export const skin = {
       "org": "Opening keynote · Thu 29 Oct",
       "photo": "img/keynotes/kn-landowski.jpg",
       "bio": "Dr Lila Landowski is a multi-award-winning neuroscientist and senior lecturer at the University of Tasmania, Board Director of Science & Technology Australia, World Health Organisation Fides health ambassador and Executive Director of the Australian Brain Alliance. Passionate about making science useful in everyday life, Lila brings brain science to millions through radio, TV screens, podcasts and live events. Her TEDx talk on the neuroscience of learning faster is the #3 most-watched TEDx talk in the world since it came out in 2023. As a keynote speaker, she is trusted by Fortune 500 and ASX 50 companies, governments, athletes and leaders to translate neuroscience into practical strategies for optimising performance. An Australian Museum Eureka Award winner, Lila is on a mission to make brain science accessible to everyone."
+    },
+    {
+      "name": "Julian Moore",
+      "title": "Chief AI Consultant · Strategic Membership Solutions",
+      "org": "Closing keynote · Fri 30 Oct",
+      "photo": "img/keynotes/kn-moore.jpg",
+      "bio": "Julian Moore is one of Australasia’s leading experts in the practical application of AI across corporates, government, and associations. Known for his engaging, story-driven keynotes featuring trademark live demonstrations - where AI tools are built in front of the audience - Julian helps organisations embed AI into their operations, customer and member engagement, and new revenue streams. Beyond the stage, Julian works directly with leadership teams as Chief AI Consultant at Strategic Membership Solutions, guiding organisations through the practical realities of adopting AI - from identifying the right opportunities to building the skills and confidence to act on them. His focus is always on what works in practice, not theory, and audiences consistently leave his sessions with tools and ideas they can apply immediately."
     }
   ],
 
