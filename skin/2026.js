@@ -4,7 +4,7 @@
 // Flipping one of the hand-set fields below is a one-line hand edit; that is expected and fine.
 export const skin = {
   // ---- the hand-set fields (spec §2.2). One line each. ----
-  appOpen: false,                       // flip to true by hand once the app is confirmed ready (Lumen + Adam)
+  appOpen: true,                        // OPEN: Adam ruled 15 Oct 2026, live Fri 16 Oct (spec §2.3). Hand-set; the template carries it too.
   appOpensOn: 'Friday 16 October',      // Adam, 13 Oct (spec §2.3). '' = "The conference app opens soon."
   materialsLinked: false,               // true ONLY once the app's Materials tab links to PGW's folder
   highlightsVideo: '',                  // '' = wrap V1; a YouTube URL = wrap V2
