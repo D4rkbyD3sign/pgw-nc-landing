@@ -34,9 +34,10 @@ export const skin = {
     cardEnd: 0.80,                        // the card's lettering ends 80% down the frame (measured on the end still)
   },
   // content-gated (spec §6.3): empty = NOT rendered at all.
-  // What to wear (spec §3 item 7): cards in date order, each { label, value, means }. [] = section absent.
-  // `means` is the "What it means" definition (spec §5.18, approved by Adam 13 Oct). '' = no toggle on that card.
-  whatToWear: [{"label": "Conference days · Thu & Fri", "value": "Business casual", "means": "Smart but relaxed: trousers or chinos with a collared shirt or blouse. A jacket if you like; no tie needed."}, {"label": "Mustique cruise · Thu evening", "value": "Business casual", "means": "Smart but relaxed: trousers or chinos with a collared shirt or blouse. A jacket if you like; no tie needed."}, {"label": "Annual Awards Dinner · Fri evening", "value": "Cocktail", "means": "Dressed up for the evening: a suit or blazer (tie optional), or a cocktail dress or smart separates."}],
+  // What to wear (spec §3 item 7): cards in date order, each { label, value, means[, session] }. [] = section absent.
+  // `means` is the "A quick guide" definition (spec §5.18, reworded 20 Oct). '' = no toggle on that card.
+  // `session` (cruise card only, 20 Oct, spec §5.5b): the app session whose `audience` tag the card shows. Never the words.
+  whatToWear: [{"label": "Conference days · Thu & Fri", "value": "Business casual", "means": "Collared shirt or blouse, trousers or chinos. Jacket optional, no tie."}, {"label": "Mustique cruise · Thu evening", "value": "Business casual", "means": "Collared shirt or blouse, trousers or chinos. Jacket optional, no tie.", "session": "d1-cruise"}, {"label": "Annual Awards Dinner · Fri evening", "value": "Cocktail", "means": "Suit or blazer (tie optional), or a cocktail dress or smart separates."}],
   // Getting there text panel (plain text; a blank line starts a new paragraph). '' = absent.
   gettingThere: '',
   // day-card headings (manual Revision 1): '' = not rendered. Index 0 = day 1.
@@ -171,7 +172,7 @@ export const skin = {
       "partners": "Educational partners"
     },
     "wear": {
-      "means": "What it means"
+      "means": "A quick guide"
     },
     "gate": {
       "h1": "You're not connected.",

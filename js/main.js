@@ -127,7 +127,7 @@ function closeVideo(host) {
   }, () => $('[data-action="play"]', host)?.focus({ preventScroll: true }))
 }
 
-/** Open or close a disclosure: a "What it means" toggle or a speaker's bio (one shape for both). */
+/** Open or close a disclosure: an "A quick guide" toggle or a speaker's bio (one shape for both). */
 function toggle(btn) {
   const open = btn.getAttribute('aria-expanded') !== 'true'
   btn.setAttribute('aria-expanded', String(open))
@@ -292,7 +292,7 @@ function renderDays(data) {
         el('p', { class: 'day-label', text: `Day ${d.day} · ${d.label}` }),
         heading ? el('h3', { text: heading }) : null,
         el('ul', {}, ...rows.map((r) => el('li', { class: r.s?.kind === 'SOCIAL' && r.rank === 2 ? 'eve' : null }, el('time', { text: r.at }),
-          el('span', { class: 'row-text' }, el('span', { text: r.text }), r.s ? cruiseLine(r.s) : null)))),
+          el('span', { class: 'row-text' }, el('span', { text: r.text }), r.rank === 2 ? audTag(r.s) : null, r.s ? cruiseLine(r.s) : null)))),
       ))
     })
     if (grid.childElementCount) {
@@ -319,6 +319,25 @@ function cruiseLine(s) {
   const pier = s.venue && typeof s.venue.name === 'string' ? s.venue.name.trim() : ''
   if (!tpl || s.id !== skin.cruiseSessionId || !pier) return null
   return el('span', { class: 'depart', text: tpl.replace('{pier}', pier) })
+}
+
+/** Spec §5.5b (record 256, Adam 20 Oct): a session's audience note (the cruise's, today). The words come from
+ *  the app's data (`session.audience`, typed ONCE, in the app's data.js), never from this file or the skin. A NOTE, not a
+ *  control: a plain span, no link, no tabindex, no role. Absent, empty or not a string -> no tag (the fail-safe). */
+function audTag(s) {
+  const a = typeof s?.audience === 'string' ? s.audience.trim() : ''
+  return a ? el('span', { class: 'aud', text: a }) : null
+}
+
+/** Spec §5.5b on the dress cards: a card whose skin entry names a `session` (only the cruise's) shows that session's
+ *  audience tag under its mono label. Runs AFTER the app data loads, fenced like every derived part: the cards were drawn
+ *  without data (Wren N-2), so a data failure leaves them exactly as they are, with no tag. */
+function tagWear(data) {
+  const sessions = Array.isArray(data?.sessions) ? data.sessions : []
+  for (const card of $$('.wear-card[data-session]')) {
+    const tag = audTag(sessions.find((s) => s.id === card.dataset.session))
+    if (tag) card.querySelector('.wear-label').after(tag)
+  }
 }
 
 function renderCpd() {
@@ -370,11 +389,13 @@ function loadMap(card) {
 
 function renderWear() {
   // What to wear (spec §3 item 7): cards in date order. ⭐ Content-gated: an empty list = the section is absent (§6.3).
-  // "What it means" (spec §5.18, approved 13 Oct): a disclosure under each dress code, when the card carries one.
+  // "A quick guide" (spec §5.18, reworded 20 Oct): a disclosure under each dress code, when the card carries one.
+  // A card that names a `session` (the cruise's, spec §5.5b) is marked for tagWear(), which adds the tag after the data loads.
   const items = Array.isArray(skin.whatToWear) ? skin.whatToWear.filter((w) => w && w.label && w.value) : []
   if (!items.length) return $('[data-section="bring"]').remove()
   slot('bring').append(...items.map((w, k) => {
-    const card = el('div', { class: 'card wear-card' }, el('p', { class: 'wear-label', text: w.label }), el('p', { class: 'wear-value', text: w.value }))
+    const sid = typeof w.session === 'string' && w.session.trim() ? w.session.trim() : null
+    const card = el('div', { class: 'card wear-card', 'data-session': sid }, el('p', { class: 'wear-label', text: w.label }), el('p', { class: 'wear-value', text: w.value }))
     card.style.setProperty('--i', k)
     const means = (w.means || '').trim()
     if (means) {
@@ -576,6 +597,7 @@ async function boot() {
     ['loadin', () => renderHeroFacts(data), '[data-slot="when"], [data-slot="tagline"]'],
     ['plan', () => renderDays(data), '[data-slot="days"], [data-section="plan"] .lede, [data-section="plan"] .grid2'],
     ['where', () => renderWhere(data), '[data-section="where"]'],
+    ['bring', () => tagWear(data), '.wear-card .aud'],
     ['partners', () => renderPartners(data), '[data-section="partners"]'],
     ['speakers', () => renderSpeakers(data), '[data-section="speakers"]'],
   ]

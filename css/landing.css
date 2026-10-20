@@ -231,6 +231,13 @@ h1 { font-size: clamp(44px, 9vw, 92px); line-height: 1.08; letter-spacing: -.04e
 .day li.eve time { color: var(--lime-ink); }
 .day .row-text { display: grid; gap: 0; }
 .day .depart { font-size: 13px; color: var(--grey); }
+/* The audience note (spec §5.5b, record 256): lime FILL, ink TEXT (never lime text on light, §4), NO shadow: the lime pill's
+   shadow belongs to the action button (§2.3), and this must not read as a second "one lime moment". A note, not a control.
+   Placement: on its own line under the evening row's title, and under the dress card's mono label, at every width. */
+.aud { display:inline-block; background:var(--lime); color:var(--ink); font-family:var(--mono); font-size:11px;
+       line-height:1; padding:4px 8px; border-radius:999px; letter-spacing:.02em; vertical-align:middle; white-space:nowrap; }
+.day .row-text .aud { justify-self: start; margin: 4px 0 2px; }
+.wear-card .aud { margin-top: 8px; }
 /* Full content width (the day cards' edges). A two-column grid, so every line of the text starts to the right of the tag. */
 .cpd { margin-top: 24px; display: grid; grid-template-columns: auto 1fr; column-gap: 12px; align-items: start; font-size: 14px; line-height: 1.7; color: var(--grey); }
 .cpd-tag { justify-self: start; margin-top: 2px; font: 500 11px/1 var(--mono); letter-spacing: .12em; color: var(--ink);
@@ -257,9 +264,24 @@ h1 { font-size: clamp(44px, 9vw, 92px); line-height: 1.08; letter-spacing: -.04e
 .map-card.is-loaded { padding: 0; background-image: none; }
 .map-card iframe { display: block; width: 100%; height: 100%; min-height: 220px; border: 0; }
 
-/* ---------- what to wear (spec §3 item 7) + "What it means" (spec §5.18) ---------- */
+/* ---------- what to wear (spec §3 item 7) + "A quick guide" (spec §5.18) ---------- */
 .wear { display: grid; gap: 16px; margin-top: 24px; align-items: start; }
 @media (min-width: 900px) { .wear { grid-template-columns: repeat(3, 1fr); } }
+/* 3-up ONLY (record 256 patch, Wren N-1, Vesper 20 Oct): the three cards share five rows - label, audience pill, value,
+   toggle, definition - by SUBGRID, so value and toggle start at one y in all three (a label that wraps in one card
+   only pushes the row, not one card). The pill row is reserved (27px = the pill + its 8px margin) whenever a card names
+   a session, which the skin draws before any data loads: it holds if the pill never arrives, and nothing jumps when it
+   does. Phones (one column) keep the plain stacked cards: no rule here applies below 900px. */
+@media (min-width: 900px) {
+  .wear { grid-template-rows: repeat(5, auto); row-gap: 0; }
+  .wear:has(.wear-card[data-session]) { grid-template-rows: auto minmax(27px, auto) auto auto auto; }
+  .wear-card { display: grid; grid-row: span 5; grid-template-rows: subgrid; row-gap: 0; align-content: start; }
+  .wear-card .wear-label { grid-row: 1; }
+  .wear-card .aud { grid-row: 2; justify-self: start; align-self: start; }
+  .wear-card .wear-value { grid-row: 3; }
+  .wear-card .means-t { grid-row: 4; justify-self: start; }
+  .wear-card .reveal { grid-row: 5; }
+}
 .wear-label { font: 500 12px/1.4 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--grey); }
 .wear-value { font-size: 22px; font-weight: 500; letter-spacing: -.02em; margin-top: 8px; }
 .means-t { margin-top: 16px; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; background: none; border: 0; padding: 0; cursor: pointer;
