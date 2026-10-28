@@ -4,7 +4,7 @@
 // Flipping one of the hand-set fields below is a one-line hand edit; that is expected and fine.
 export const skin = {
   // ---- the hand-set fields (spec §2.2). One line each. ----
-  appOpen: false,                       // CLOSED again 16 Oct: Adam, PGW feedback (agenda to be settled first). Flip back by hand.
+  appOpen: true,                        // OPEN again 27 Oct: Adam (record 219). Hand-set; the template carries it too.
   appOpensOn: '',                       // Adam, 13 Oct (spec §2.3). '' = "The conference app opens soon."
   materialsLinked: false,               // true ONLY once the app's Materials tab links to PGW's folder
   highlightsVideo: '',                  // '' = wrap V1; a YouTube URL = wrap V2
@@ -139,7 +139,7 @@ export const skin = {
     "labels": {
       "planEyebrow": "What's planned",
       "planHeading": "Two days in Hobart: key times",
-      "planLede": "The headlines. The full agenda will be in the PGW National Conference app.",
+      "planLede": "The headlines. The complete agenda is found on the PGW National Conference app.",
       "whereEyebrow": "Where",
       "bringEyebrow": "Before you pack",
       "bringHeading": "What to wear",
