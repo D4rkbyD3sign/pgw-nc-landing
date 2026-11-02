@@ -113,7 +113,7 @@ export const skin = {
       "line": "Julian Moore closed ImplementAI by building a song with us, live on stage. A song isn't finished without a music video, he says, so he made one for us.",
       "play": "Watch the encore",
       "iframeTitle": "The encore: music video by Julian Moore",
-      "credit": "Music video by Julian Moore · Julian@smsonline.net.au"
+      "credit": "Music video by Julian Moore"
     },
     "wrappedFlair": {
       "heroAlt": "Hobart's waterfront at dusk, with kunanyi behind and the conference venue lit up (generated).",

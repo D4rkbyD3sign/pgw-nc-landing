@@ -548,10 +548,8 @@ function renderEncore(state) {
   if (state.encoreVideo && !id) console.error(`[skin] encoreVideo is set but is not a YouTube URL: "${state.encoreVideo}". No encore block.`)
   if (!id) return section?.remove()
   slot('encore-card').append(videoHost({ id, playLabel: copy.encore.play, playAria: copy.encore.play, iframeTitle: copy.encore.iframeTitle }))
-  // The credit is ONE skin string, "<name> · <email>"; the email becomes a mailto: link in type (spec §5.8 rule, never lime).
-  const at = copy.encore.credit.lastIndexOf(' · ')
-  const email = copy.encore.credit.slice(at + 3)
-  slot('encore-credit').append(document.createTextNode(copy.encore.credit.slice(0, at + 3)), el('a', { href: `mailto:${email}`, text: email }))
+  // The credit is the name only (spec §5.9a, record 272): ONE text node, no link of any kind. gen_skin.py refuses a contact detail.
+  slot('encore-credit').textContent = copy.encore.credit
 }
 
 // ============ the resources line (spec §5.9d, record 271): WRAPPED only, the last word, the trace's terminal ============
