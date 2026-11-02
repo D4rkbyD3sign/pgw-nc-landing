@@ -7,6 +7,7 @@ import { passGate } from './gate.js'
 import { startLoadin } from './loadin.js'
 import { startTrace } from './trace.js'
 import { startRunway } from './runway.js'
+import { startFlair } from './flair.js'
 
 const copy = skin.copy
 const $ = (sel, root = document) => root.querySelector(sel)
@@ -32,11 +33,12 @@ const paragraphs = (text) => text.split(/\n\s*\n/).map((t) => t.trim()).filter(B
 
 // ============ which sections each clock state shows (spec §2.4, §3 as revised 13 Oct) ============
 // ⭐ Reversible call 4 (partners stay on WRAPPED) is the single 'partners' entry in the wrapped list.
-// The load-in, monitor, trace and door do not appear in WRAPPED. The action under the monitor is BEFORE only (§2.4).
+// The load-in, monitor and door do not appear in WRAPPED; the trace does, since 2 Nov (record 271, §5.15). The action under
+// the monitor is BEFORE only (§2.4). WRAPPED (record 271): the hero window first, the resources line last (§5.9b, §5.9d).
 const SECTIONS = {
   before: ['loadin', 'monitor', 'action', 'intro', 'plan', 'where', 'bring', 'partners', 'speakers', 'questions', 'door', 'footer'],
   live: ['loadin', 'monitor', 'intro', 'plan', 'where', 'bring', 'partners', 'speakers', 'questions', 'door', 'footer'],
-  wrapped: ['topbar-wrapped', 'wrap', 'encore', 'partners', 'footer'],
+  wrapped: ['topbar-wrapped', 'hero-wrapped', 'wrap', 'encore', 'partners', 'resources', 'footer'],
 }
 
 // ============ app links: the ONLY place one is ever created ============
@@ -552,6 +554,16 @@ function renderEncore(state) {
   slot('encore-credit').append(document.createTextNode(copy.encore.credit.slice(0, at + 3)), el('a', { href: `mailto:${email}`, text: email }))
 }
 
+// ============ the resources line (spec §5.9d, record 271): WRAPPED only, the last word, the trace's terminal ============
+// Shown only while materialsLinked is false. Once the materials are linked it is REMOVED (not hidden), and the terminal node
+// moves to partners (§5.15); the wrap button already reads "Revisit the sessions" then (§2.3 D). Its words fill like any
+// other skin word (data-text). materialsLinked's §2.5 override already exists (local preview only); none is added.
+function renderResources(state) {
+  if (!state.materialsLinked) return
+  $('[data-section="resources"]')?.remove()
+  $('[data-section="partners"] [data-node]')?.setAttribute('data-end', '')
+}
+
 // ============ motion (spec §8): content is visible by default; script only ADDS animation ============
 function reveals() {
   if (reduceMotion || !('IntersectionObserver' in window)) return
@@ -587,6 +599,7 @@ async function boot() {
   // ---- 1 · Everything that needs NO app data renders first (Wren N-2): a data failure cannot stop it. ----
   if (has('wrap')) renderWrap(state)
   if (has('encore')) renderEncore(state)
+  if (has('resources')) renderResources(state)
   if (has('loadin')) { renderTopbar(state); slot('motif').innerHTML = skin.motif }
   if (has('monitor')) renderMonitor(state)
   if (has('action') && state.clock === 'before') slot('action').append(...appAction(state))
@@ -606,6 +619,9 @@ async function boot() {
   let loadin = null
   if (has('loadin')) loadin = startLoadin($('[data-section="loadin"]'), { skin, copy, reduce: reduceMotion })
   reveals()
+  // The hero window powers on at once, before the app data loads: the unpowered classes go on in the same task as the mount,
+  // so a lit image never flashes before it goes dark (spec §5.9b).
+  if (has('hero-wrapped')) startFlair({ reduce: reduceMotion })
 
   // Countdown, and a reload when the real clock crosses a boundary (never under a ?state= override).
   tickCountdown()
@@ -640,8 +656,9 @@ async function boot() {
   }
   loadin?.relayout()
 
-  // The trace starts once every section is in place (BEFORE + LIVE only: no trace in WRAPPED).
-  if (has('door')) startTrace($('#page'), { reduce: reduceMotion })
+  // The trace starts once every section is in place: BEFORE + LIVE (monitor → door) and, since 2 Nov (record 271, §5.15),
+  // WRAPPED (hero window → wrap → encore → partners → resources).
+  if (has('door') || has('hero-wrapped')) startTrace($('#page'), { reduce: reduceMotion })
 }
 
 boot().catch((err) => console.error('[boot] the page failed to start.', err))

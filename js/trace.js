@@ -1,5 +1,7 @@
 // THE TRACE (spec §5.15): PGW's ImplementAI mark grown into a structure. One lime line runs down the left gutter from
 // the monitor to the door, and each section's node lights as you reach it. Input at the top, result at the bottom.
+// WRAPPED (since 2 Nov, record 271): it runs again, from the hero window (.whero, in the monitor's role: the reference,
+// the anchor and the dark node) to the resources line, or to partners once the materials are linked.
 //
 // Geometry: NETWORK (Adam, 12 Oct). The mark's own diagonal jogs (~34px) into each node; the line alternates between two
 // lanes: 15% / 45% of the 40px gutter from 900px, 30% / 70% of the 20px gutter on phones. It lives in the GUTTER ONLY: an absolutely positioned SVG inside .page, exactly as
@@ -26,11 +28,11 @@ export function startTrace(page, { reduce }) {
   let pts = [], samples = [], L = 0, pageTop = 0
 
   const visible = (e) => e.getClientRects().length > 0
-  const anchorOf = (el) => (el.classList.contains('monitor') ? el
+  const anchorOf = (el) => (el.classList.contains('monitor') || el.classList.contains('whero') ? el
     : [...el.querySelectorAll('[data-anchor]')].find(visible) || el.querySelector('.eyebrow') || el)
 
   function build() {
-    const ref = page.querySelector('.monitor')?.parentElement || page.querySelector('.wrap')
+    const ref = page.querySelector('.monitor, .whero')?.parentElement || page.querySelector('.wrap')
     const nodes = [...page.querySelectorAll('[data-node]')].filter(visible)
     if (!ref || !nodes.length) { svg.style.display = 'none'; return }
     svg.style.display = ''
@@ -52,10 +54,10 @@ export function startTrace(page, { reduce }) {
         x: lanes[i % 2],
         y: Math.round(r.top - pr.top + r.height / 2) + 0.5,
         end: e.hasAttribute('data-end'),
-        dark: e.classList.contains('monitor') || !!e.closest('.band--dark'),
+        dark: e.classList.contains('monitor') || e.classList.contains('whero') || !!e.closest('.band--dark'),
       }
     })
-    // A short horizontal "power lead" from the monitor's left edge (the gutter's right edge) into the first node.
+    // A short horizontal "power lead" from the monitor's (or the hero window's) left edge, the gutter's right edge, into the first node.
     let d = `M ${g} ${pts[0].y} H ${pts[0].x}`
     for (let i = 1; i < pts.length; i++) {
       const p = pts[i - 1], q = pts[i], j = Math.max(0, Math.min(JOG, (q.y - p.y) / 2))

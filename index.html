@@ -24,6 +24,7 @@
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/screen.css">
 <link rel="stylesheet" href="css/landing.css">
+<link rel="stylesheet" href="css/flair.css">
 <script src="js/head.js"></script>
 <script type="module" src="js/main.js"></script>
 </head>
@@ -75,19 +76,54 @@
       <header class="top"><img class="logo" src="img/logo-base.svg" alt="PGW" width="186" height="26"></header>
     </div>
 
+    <!-- WRAPPED only: THE HERO WINDOW (spec §5.9b), a window onto Hobart at dusk where the PGW mark powers on. The trace's first
+         node (§5.15): the power lead enters its left edge. The markup is the END state (full-brightness image, filled mark);
+         js/flair.js adds the unpowered classes. The alt is filled from the skin (copy.wrappedFlair.heroAlt), never typed here. -->
+    <div class="wrap" data-section="hero-wrapped">
+      <figure class="whero" data-node>
+        <div class="whero-win">
+          <img class="whero-img" src="img/hobart-2000.jpg" srcset="img/hobart-1000.jpg 1000w, img/hobart-2000.jpg 2000w"
+               sizes="(min-width: 1120px) 1040px, calc(100vw - 40px)" width="1920" height="1080" decoding="async" data-alt="wrappedFlair.heroAlt">
+          <div class="whero-veil"></div>
+            <!-- The PGW mark: the awards deck's svg.mark (ceremony.html, viewBox 0 0 622.2 630.1), its four d values copied by script,
+                 never redrawn. Drawn twice: the OUTLINE copy (the unpowered look) and the FILLED copy; then the paper dash for the ring. -->
+            <svg class="whero-mark" viewBox="0 0 622.2 630.1" aria-hidden="true" focusable="false">
+              <g class="outline">
+                <path class="ring" d="M46.82 435.66 C57.66 469.68 74.43 500.16 95.59 526.36 L111.59 451.40 C106.48 441.17 102.05 430.44 98.47 419.20 C60.74 300.73 126.19 174.09 244.67 136.35 C282.90 124.17 321.96 122.77 358.62 130.41 L413.55 112.91 L418.36 92.19 C359.90 68.33 293.08 64.04 228.21 84.70 C81.21 131.52 0.00 288.65 46.82 435.66 M448.69 530.58 C522.80 474.62 557.31 376.05 527.52 282.54 C523.76 270.73 519.09 259.46 513.65 248.76 L530.52 175.55 C551.63 201.72 568.35 232.13 579.17 266.09 C622.24 401.30 556.98 545.08 431.83 603.71 L448.69 530.58"/>
+                <path class="bar b0" d="M120.03 552.92 L169.17 322.67 L246.65 297.99 L183.75 598.51 C160.58 586.42 139.09 571.10 120.03 552.92"/>
+                <path class="bar b1" d="M286.31 629.00 L393.95 150.06 L316.47 174.74 L217.86 613.52 C239.79 621.48 262.78 626.73 286.31 629.00"/>
+                <path class="bar b2" d="M398.60 616.77 L540.78 0.00 L464.33 24.35 L323.74 630.07 C348.33 629.11 373.19 624.88 397.78 617.04 C398.06 616.96 398.33 616.86 398.60 616.77"/>
+              </g>
+              <g class="fill glow">
+                <path class="ring" d="M46.82 435.66 C57.66 469.68 74.43 500.16 95.59 526.36 L111.59 451.40 C106.48 441.17 102.05 430.44 98.47 419.20 C60.74 300.73 126.19 174.09 244.67 136.35 C282.90 124.17 321.96 122.77 358.62 130.41 L413.55 112.91 L418.36 92.19 C359.90 68.33 293.08 64.04 228.21 84.70 C81.21 131.52 0.00 288.65 46.82 435.66 M448.69 530.58 C522.80 474.62 557.31 376.05 527.52 282.54 C523.76 270.73 519.09 259.46 513.65 248.76 L530.52 175.55 C551.63 201.72 568.35 232.13 579.17 266.09 C622.24 401.30 556.98 545.08 431.83 603.71 L448.69 530.58"/>
+                <path class="bar b0" d="M120.03 552.92 L169.17 322.67 L246.65 297.99 L183.75 598.51 C160.58 586.42 139.09 571.10 120.03 552.92"/>
+                <path class="bar b1" d="M286.31 629.00 L393.95 150.06 L316.47 174.74 L217.86 613.52 C239.79 621.48 262.78 626.73 286.31 629.00"/>
+                <path class="bar b2" d="M398.60 616.77 L540.78 0.00 L464.33 24.35 L323.74 630.07 C348.33 629.11 373.19 624.88 397.78 617.04 C398.06 616.96 398.33 616.86 398.60 616.77"/>
+              </g>
+              <path class="run" pathLength="100" d="M46.82 435.66 C57.66 469.68 74.43 500.16 95.59 526.36 L111.59 451.40 C106.48 441.17 102.05 430.44 98.47 419.20 C60.74 300.73 126.19 174.09 244.67 136.35 C282.90 124.17 321.96 122.77 358.62 130.41 L413.55 112.91 L418.36 92.19 C359.90 68.33 293.08 64.04 228.21 84.70 C81.21 131.52 0.00 288.65 46.82 435.66 M448.69 530.58 C522.80 474.62 557.31 376.05 527.52 282.54 C523.76 270.73 519.09 259.46 513.65 248.76 L530.52 175.55 C551.63 201.72 568.35 232.13 579.17 266.09 C622.24 401.30 556.98 545.08 431.83 603.71 L448.69 530.58"/>
+            </svg>
+        </div>
+      </figure>
+    </div>
+
     <main>
       <!-- ===== WRAPPED: the holding page's wrap block (spec §5.9) ===== -->
-      <section class="wrapblock wrap" data-section="wrap" aria-labelledby="wrap-h">
+      <section class="wrapblock wrap" data-section="wrap" aria-labelledby="wrap-h" data-node>
         <p class="eyebrow" data-text="wrap.eyebrow"></p>
         <h1 class="wrap-h" id="wrap-h" data-slot="wrap-headline"></h1>
         <p class="wrap-p" data-text="wrap.thanks"></p>
+        <!-- The crew photo (spec §5.9c): Johnny's photo from the Mustique cruise, after the thanks, before the V1/V2 line. No caption. -->
+        <figure class="wcrew">
+          <img src="img/cruise-1600.jpg" srcset="img/cruise-800.jpg 800w, img/cruise-1600.jpg 1600w" sizes="(min-width: 900px) 760px, calc(100vw - 40px)"
+               width="1600" height="1200" loading="lazy" decoding="async" data-alt="wrappedFlair.crewAlt">
+        </figure>
         <div data-slot="wrap-close"></div>
         <div class="wrap-action" data-slot="wrap-app"></div>
       </section>
 
       <!-- ===== WRAPPED: the encore (spec §5.9a), AFTER the whole wrap block, never inside it. Removed when encoreVideo is empty. ===== -->
-      <section class="encore wrap" data-section="encore" aria-labelledby="encore-h">
-        <h2 class="h" id="encore-h" data-text="encore.heading"></h2>
+      <section class="encore wrap" data-section="encore" aria-labelledby="encore-h" data-node>
+        <h2 class="h" id="encore-h" data-text="encore.heading" data-anchor></h2>
         <p class="wrap-p" data-text="encore.line"></p>
         <div data-slot="encore-card"></div>
         <p class="encore-credit" data-slot="encore-credit"></p>
@@ -166,6 +202,12 @@
 
       <!-- ===== THE DOOR (spec §5.17): the app action again, where the trace ends. Same words, no new copy. ===== -->
       <div class="wrap door rv" data-section="door" data-slot="door" data-node data-end></div>
+
+      <!-- ===== WRAPPED: the resources line (spec §5.9d), the last word and the trace's terminal. The §5.2 pending line: a status,
+           not a link, not focusable. Removed (not hidden) when materialsLinked is true; the terminal then moves to partners. ===== -->
+      <div class="wrap wnext" data-section="resources" data-node data-end>
+        <p class="pending" data-anchor><span data-text="wrappedFlair.resources"></span></p>
+      </div>
     </main>
 
     <!-- ===== FOOTER (spec §5.10) ===== -->

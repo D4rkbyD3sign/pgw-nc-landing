@@ -115,6 +115,11 @@ export const skin = {
       "iframeTitle": "The encore: music video by Julian Moore",
       "credit": "Music video by Julian Moore · Julian@smsonline.net.au"
     },
+    "wrappedFlair": {
+      "heroAlt": "Hobart's waterfront at dusk, with kunanyi behind and the conference venue lit up (generated).",
+      "crewAlt": "PGW advisers on the Mustique cruise, on the advisers' dinner night.",
+      "resources": "Presentations and recordings will be on the PGW Resources Centre shortly."
+    },
     "map": {
       "title": "Map: Crowne Plaza Hobart, 110 Liverpool Street",
       "show": "Show map",
