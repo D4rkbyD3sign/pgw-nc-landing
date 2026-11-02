@@ -8,6 +8,7 @@ export const skin = {
   appOpensOn: '',                       // Adam, 13 Oct (spec §2.3). '' = "The conference app opens soon."
   materialsLinked: false,               // true ONLY once the app's Materials tab links to PGW's folder
   highlightsVideo: '',                  // '' = wrap V1; a YouTube URL = wrap V2
+  encoreVideo: 'https://youtu.be/r5mFCTo0qww',   // the encore (spec §5.9a, record 269); '' = no block
 
   // ---- the pre-launch gate (spec §2.6, §5.20). ⛔ A CURTAIN, NOT A LOCK: the files stay public. ----
   // gateHash is the SHA-256 (lowercase hex) of the password. ⛔ NEVER the password itself, anywhere.
@@ -106,6 +107,13 @@ export const skin = {
       "v1Close": "Highlights from Hobart are on their way. See you in 2027.",
       "v2Lead": "Watch the highlights from Hobart.",
       "v2Close": "See you in 2027."
+    },
+    "encore": {
+      "heading": "The encore",
+      "line": "Julian Moore closed ImplementAI by building a song with us, live on stage. A song isn't finished without a music video, he says, so he made one for us.",
+      "play": "Watch the encore",
+      "iframeTitle": "The encore: music video by Julian Moore",
+      "credit": "Music video by Julian Moore · Julian@smsonline.net.au"
     },
     "map": {
       "title": "Map: Crowne Plaza Hobart, 110 Liverpool Street",

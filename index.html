@@ -85,6 +85,14 @@
         <div class="wrap-action" data-slot="wrap-app"></div>
       </section>
 
+      <!-- ===== WRAPPED: the encore (spec §5.9a), AFTER the whole wrap block, never inside it. Removed when encoreVideo is empty. ===== -->
+      <section class="encore wrap" data-section="encore" aria-labelledby="encore-h">
+        <h2 class="h" id="encore-h" data-text="encore.heading"></h2>
+        <p class="wrap-p" data-text="encore.line"></p>
+        <div data-slot="encore-card"></div>
+        <p class="encore-credit" data-slot="encore-credit"></p>
+      </section>
+
       <!-- ===== THE MONITOR (spec §5.14): trailer + countdown in one charcoal card. The trace's first node. ===== -->
       <div class="wrap" data-section="monitor">
         <div class="monitor rv" id="monitor" data-node>

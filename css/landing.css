@@ -373,6 +373,15 @@ div.sp { grid-template-columns: 56px 1fr; }   /* no bio: a plain row, not a butt
 .wrap-lead { color: var(--ink); font-weight: 500; }
 .wrapblock .video { margin-top: 24px; max-width: 760px; }
 .wrap-action { margin-top: 32px; }
+/* ---------- the encore (spec §5.9a, record 269): WRAPPED only, after the wrap block, on the same paper ground. No lime. ---------- */
+.encore { padding-top: 64px; }
+.encore .h { margin-top: 0; }   /* no eyebrow above it */
+.encore .video { margin-top: 24px; max-width: 36em; view-transition-name: pgw-encore; }   /* the text measure; full column on phones */
+.encore .video-card, .encore .video iframe { box-shadow: var(--shadow-raised); }
+/* Its own open-state rule (the existing theatre is keyed to .monitor): full content width, capped, centred. */
+.encore .video.is-open { max-width: none; width: min(100%, calc(82vh * 16 / 9)); margin-inline: auto; }
+.encore-credit { margin-top: 12px; font-size: 14px; line-height: 1.5; color: var(--grey); }
+.encore-credit a { color: inherit; text-decoration: underline; text-underline-offset: 4px; }
 
 /* ---------- footer (spec §5.10) ---------- */
 .foot { margin-top: 64px; border-top: 1px solid var(--hair); padding: 32px 0 48px; font-size: 13px; color: var(--grey); }

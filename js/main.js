@@ -36,7 +36,7 @@ const paragraphs = (text) => text.split(/\n\s*\n/).map((t) => t.trim()).filter(B
 const SECTIONS = {
   before: ['loadin', 'monitor', 'action', 'intro', 'plan', 'where', 'bring', 'partners', 'speakers', 'questions', 'door', 'footer'],
   live: ['loadin', 'monitor', 'intro', 'plan', 'where', 'bring', 'partners', 'speakers', 'questions', 'door', 'footer'],
-  wrapped: ['topbar-wrapped', 'wrap', 'partners', 'footer'],
+  wrapped: ['topbar-wrapped', 'wrap', 'encore', 'partners', 'footer'],
 }
 
 // ============ app links: the ONLY place one is ever created ============
@@ -73,8 +73,12 @@ function videoHost({ id, playLabel, playAria, iframeTitle }) {
 
 function poster(host) {
   const { video: id, playLabel, playAria } = host.dataset
+  const img = el('img', { src: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`, alt: '', loading: 'lazy', decoding: 'async' })
+  // A poster that fails to load is removed: the card shows its charcoal ground + the pill, never a broken-image glyph (spec
+  // §5.9a; ruling 1, 2 Nov: every card). Element-level, so each rebuilt poster carries it; not inline (CSP), not a click listener.
+  img.addEventListener('error', () => img.remove())
   return el('div', { class: 'video-card' },
-    el('img', { src: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`, alt: '', loading: 'lazy', decoding: 'async' }),
+    img,
     el('button', { class: playLabel ? 'play' : 'play is-bare', type: 'button', 'data-action': 'play', 'aria-label': playAria || null },
       el('i', { 'aria-hidden': 'true' }), playLabel ? el('span', { text: playLabel }) : null))
 }
@@ -95,6 +99,10 @@ function transition(mutate, after) {
 
 function openVideo(host) {
   if (videoBusy || host.classList.contains('is-open')) return
+  // One player at a time (spec §5.9a), for every video: another open one closes first (iframe removed, poster back),
+  // and this one opens only once that close has settled, so two transitions never overlap (videoBusy).
+  const other = $$('.video.is-open').find((h) => h !== host)
+  if (other) return closeVideo(other, () => openVideo(host))
   videoBusy = true
   const monitor = host.closest('.monitor')
   transition(() => {
@@ -116,7 +124,7 @@ function openVideo(host) {
   })
 }
 
-function closeVideo(host) {
+function closeVideo(host, then) {
   if (videoBusy || !host.classList.contains('is-open')) return
   videoBusy = true
   transition(() => {
@@ -124,7 +132,11 @@ function closeVideo(host) {
     host.classList.remove('is-open')
     host.closest('.monitor')?.classList.remove('is-theatre')
     host.replaceChildren(poster(host))
-  }, () => $('[data-action="play"]', host)?.focus({ preventScroll: true }))
+  }, () => {
+    // `then` (one player at a time) is queued: transition() clears videoBusy right after this callback returns.
+    if (then) queueMicrotask(then)
+    else $('[data-action="play"]', host)?.focus({ preventScroll: true })
+  })
 }
 
 /** Open or close a disclosure: an "A quick guide" toggle or a speaker's bio (one shape for both). */
@@ -525,6 +537,21 @@ function renderWrap(state) {
   else action.remove()
 }
 
+// ============ the encore (spec §5.9a, record 269): WRAPPED only, after the whole wrap block ============
+// encoreVideo is its own field and never shares a slot with highlightsVideo (spec §2.2). Empty, or not an id youTubeId()
+// accepts → the section is removed entirely: no heading, no box, no gap (spec §6.3). Same card as the trailer (§5.4).
+function renderEncore(state) {
+  const section = $('[data-section="encore"]')
+  const id = state.encoreVideo ? youTubeId(state.encoreVideo) : null
+  if (state.encoreVideo && !id) console.error(`[skin] encoreVideo is set but is not a YouTube URL: "${state.encoreVideo}". No encore block.`)
+  if (!id) return section?.remove()
+  slot('encore-card').append(videoHost({ id, playLabel: copy.encore.play, playAria: copy.encore.play, iframeTitle: copy.encore.iframeTitle }))
+  // The credit is ONE skin string, "<name> · <email>"; the email becomes a mailto: link in type (spec §5.8 rule, never lime).
+  const at = copy.encore.credit.lastIndexOf(' · ')
+  const email = copy.encore.credit.slice(at + 3)
+  slot('encore-credit').append(document.createTextNode(copy.encore.credit.slice(0, at + 3)), el('a', { href: `mailto:${email}`, text: email }))
+}
+
 // ============ motion (spec §8): content is visible by default; script only ADDS animation ============
 function reveals() {
   if (reduceMotion || !('IntersectionObserver' in window)) return
@@ -559,6 +586,7 @@ async function boot() {
 
   // ---- 1 · Everything that needs NO app data renders first (Wren N-2): a data failure cannot stop it. ----
   if (has('wrap')) renderWrap(state)
+  if (has('encore')) renderEncore(state)
   if (has('loadin')) { renderTopbar(state); slot('motif').innerHTML = skin.motif }
   if (has('monitor')) renderMonitor(state)
   if (has('action') && state.clock === 'before') slot('action').append(...appAction(state))

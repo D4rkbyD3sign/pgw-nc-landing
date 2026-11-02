@@ -1,7 +1,7 @@
 // The state engine (spec §2). Two independent axes and nothing else:
 //   the CLOCK (automatic, from the skin's two instants) and the FOUR HAND-SET FIELDS (from the skin).
 // Review override (spec §2.5, revised 6 Oct): URL params `state`, `appOpen`, `appOpensOn`, `materialsLinked`,
-// `highlightsVideo` each override one value, e.g. ?state=live&appOpen=false, ON A LOCAL PREVIEW HOST ONLY.
+// `highlightsVideo`, `encoreVideo` (record 269) each override one value, e.g. ?state=live&appOpen=false, ON A LOCAL PREVIEW HOST ONLY.
 // v10: `gate=false` too, which may only switch the gate OFF (manual T-3).
 // Overrides are read from the URL every load: never stored, never written anywhere, no visible control ships.
 
@@ -43,7 +43,7 @@ export function clockAt(skin, now) {
  * @param {object} [opts]
  * @param {string} [opts.hostname] the page's hostname; defaults to location.hostname (fail-closed)
  * @returns {{clock:'before'|'live'|'wrapped', clockOverridden:boolean, overridesAllowed:boolean, gate:boolean, appOpen:boolean,
- *            appOpensOn:string, materialsLinked:boolean, highlightsVideo:string}}
+ *            appOpensOn:string, materialsLinked:boolean, highlightsVideo:string, encoreVideo:string}}
  */
 export function resolveState(skin, { now = Date.now(), search = '', hostname = currentHostname() } = {}) {
   const overridesAllowed = isPreviewHost(hostname)
@@ -83,6 +83,7 @@ export function resolveState(skin, { now = Date.now(), search = '', hostname = c
     appOpensOn: String(text('appOpensOn', skin.appOpensOn) ?? '').trim(),
     materialsLinked: bool('materialsLinked', skin.materialsLinked === true),
     highlightsVideo: String(text('highlightsVideo', skin.highlightsVideo) ?? '').trim(),
+    encoreVideo: String(text('encoreVideo', skin.encoreVideo) ?? '').trim(),   // the encore (spec §5.9a); its own field, never highlightsVideo's
   }
 
   // Spec §2.3, RULED by Adam 8 Oct (option a): an empty appOpensOn is the normal case, not a launch blocker.
